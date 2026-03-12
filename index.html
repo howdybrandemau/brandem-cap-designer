@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans','Segoe UI',system-ui,sans-serif;background:#F4F3EC;color:#47360B;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+body{font-family:'DM Sans','Segoe UI',system-ui,sans-serif;background:#F4F3EC;color:#47360B;height:100dvh;overflow:hidden;display:flex;flex-direction:column;margin:0}
 button{cursor:pointer;font-family:inherit;transition:all .15s}
 input,select,textarea{font-family:inherit}
 #app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
@@ -28,12 +28,14 @@ input,select,textarea{font-family:inherit}
 .tab-btn .tab-icon{font-size:18px;display:block;margin-bottom:2px}
 #panel{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
 /* CANVAS */
-#canvas-area{flex:1;display:flex;align-items:center;justify-content:center;background:#E8E6DC;overflow:hidden;position:relative}
-.dot-grid{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(71,54,11,.08) 1px,transparent 1px);background-size:24px 24px;pointer-events:none}
-#whiteboard{position:relative;background:#fff;border-radius:16px;box-shadow:0 8px 48px rgba(71,54,11,.18),0 2px 12px rgba(71,54,11,.10);overflow:hidden;aspect-ratio:2/1;width:min(720px,90vw)}
+#canvas-area{flex:1;display:flex;flex-direction:column;background:#E8E6DC;position:relative;overflow:hidden}
+.dot-grid{position:fixed;inset:0;background-image:radial-gradient(circle,rgba(71,54,11,.08) 1px,transparent 1px);background-size:24px 24px;pointer-events:none;z-index:0}
+#zoom-scroller{flex:1;overflow:auto;position:relative;z-index:1}
+#zoom-stage{display:inline-flex;align-items:center;justify-content:center;padding:32px;transform-origin:top left}
+#whiteboard{position:relative;background:#fff;border-radius:16px;box-shadow:0 8px 48px rgba(71,54,11,.18),0 2px 12px rgba(71,54,11,.10);overflow:visible;aspect-ratio:2/1;width:min(calc(100vw - 340px),min(1100px,calc((100dvh - 100px) * 2)));flex-shrink:0}
 #cap-svg-wrap{position:absolute;inset:0}
 #cap-svg-wrap svg{width:100%;height:100%;display:block}
-#canvas-items{position:absolute;inset:0}
+#canvas-items{position:absolute;inset:0;overflow:visible}
 #hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
 #hint-inner{background:rgba(255,255,255,.85);border-radius:10px;padding:10px 18px;font-size:12px;color:#9A8A6A;border:1px dashed #D4CFC0;backdrop-filter:blur(4px)}
 /* COLOUR PICKER MODAL */
@@ -70,7 +72,7 @@ input,select,textarea{font-family:inherit}
 .drag-content{position:relative;outline:2px dashed transparent;outline-offset:3px;border-radius:4px;padding:1px}
 .drag-item.selected .drag-content{outline-color:rgba(247,77,36,.85)}
 .drag-delete{position:absolute;top:-12px;right:-12px;background:#F74D24;border:2px solid #fff;color:#fff;border-radius:50%;width:22px;height:22px;font-size:11px;cursor:pointer;font-weight:bold;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3);z-index:30;border:none}
-.item-toolbar{position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;background:rgba(28,22,8,.93);backdrop-filter:blur(10px);border-radius:12px;padding:5px 8px;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.4);z-index:30;border:1px solid rgba(255,255,255,.08)}
+.item-toolbar{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;background:rgba(28,22,8,.93);backdrop-filter:blur(10px);border-radius:12px;padding:5px 8px;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.4);z-index:9999;border:1px solid rgba(255,255,255,.08);pointer-events:auto}
 .tb-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#ccc;cursor:pointer;font-size:15px;line-height:1;padding:3px 7px;border-radius:6px;font-weight:700}
 .tb-btn:hover{background:rgba(255,255,255,.15)}
 .tb-size{color:#FCD68A;font-size:10px;min-width:30px;text-align:center;font-weight:700}
@@ -97,6 +99,16 @@ input,select,textarea{font-family:inherit}
 /* LOGO UPLOAD */
 .upload-zone{background:#fff;border-radius:10px;padding:20px;border:2px dashed #D4CFC0;text-align:center;cursor:pointer;transition:border-color .15s}
 .upload-zone:hover{border-color:#C08B3D}
+/* UNDERBRIM PANEL */
+.underbrim-drop{border:2px dashed #D4CFC0;border-radius:14px;padding:24px 16px;text-align:center;cursor:pointer;transition:all .15s;background:#fff;position:relative}
+.underbrim-drop:hover,.underbrim-drop.drag-over{border-color:#C08B3D;background:#FFF8EE}
+.underbrim-drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.underbrim-preview{width:100%;border-radius:10px;margin-top:10px;border:1.5px solid #D4CFC0;max-height:100px;object-fit:cover}
+/* ZOOM CONTROLS */
+.zoom-controls{position:fixed;bottom:16px;right:16px;display:flex;align-items:center;gap:6px;background:rgba(244,243,236,.95);border-radius:10px;padding:5px 10px;border:1.5px solid #D4CFC0;box-shadow:0 2px 12px rgba(71,54,11,.18);z-index:200}
+.zoom-btn{background:#EAE9E1;border:1.5px solid #D4CFC0;border-radius:6px;color:#47360B;font-size:16px;font-weight:700;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.zoom-btn:hover{background:#D4CFC0}
+.zoom-label{font-size:10px;color:#9A8A6A;font-weight:700;min-width:34px;text-align:center}
 /* SUCCESS */
 .success-box{text-align:center;padding:32px 8px}
 /* SECTION LABEL */
@@ -105,9 +117,9 @@ input,select,textarea{font-family:inherit}
 .info-box{background:#DEDAD0;border-radius:8px;padding:8px 10px;border:1px solid #D4CFC0;font-size:11px;color:#9A8A6A;line-height:1.6}
 @media(max-width:700px){
   #body{flex-direction:column}
-  #sidebar{width:100%;max-height:52vh;border-right:none;border-top:1.5px solid #D4CFC0;order:1}
-  #canvas-area{order:-1}
-  #whiteboard{width:min(560px,96vw);border-radius:10px}
+  #sidebar{width:100%;flex:0 0 auto;max-height:45dvh;border-right:none;border-top:1.5px solid #D4CFC0;order:1}
+  #canvas-area{order:-1;flex:1;padding:8px}
+  #whiteboard{width:min(96vw,calc((55dvh) * 2));border-radius:10px}
   .tab-btn .tab-icon{font-size:20px}
 }
 </style>
@@ -128,16 +140,26 @@ input,select,textarea{font-family:inherit}
         <button class="tab-btn active" data-tab="colours" onclick="switchTab('colours')"><span class="tab-icon">🎨</span>Colours</button>
         <button class="tab-btn" data-tab="text" onclick="switchTab('text')"><span class="tab-icon">✏️</span>Text</button>
         <button class="tab-btn" data-tab="logo" onclick="switchTab('logo')"><span class="tab-icon">🖼️</span>Logo</button>
+        <button class="tab-btn" data-tab="underbrim" onclick="switchTab('underbrim')"><span class="tab-icon">📸</span>Underbrim</button>
         <button class="tab-btn" data-tab="order" onclick="switchTab('order')"><span class="tab-icon">📋</span>Order</button>
       </div>
       <div id="panel"></div>
     </div>
     <div id="canvas-area">
       <div class="dot-grid"></div>
+      <div id="zoom-scroller">
+      <div id="zoom-stage">
       <div id="whiteboard">
         <div id="cap-svg-wrap"></div>
         <div id="canvas-items"></div>
         <div id="hint"><div id="hint-inner">Add text or a logo using the panel on the left</div></div>
+      </div>
+      </div>
+      </div>
+      <div class="zoom-controls">
+        <button class="zoom-btn" onclick="changeZoom(-1)" title="Zoom out">−</button>
+        <span class="zoom-label" id="zoom-label">100%</span>
+        <button class="zoom-btn" onclick="changeZoom(1)" title="Zoom in">+</button>
       </div>
     </div>
   </div>
@@ -221,7 +243,7 @@ const COLOURS = [
 const FONTS = ["Arial","Georgia","Impact","Verdana","Trebuchet MS","Times New Roman","Courier New","Palatino","Tahoma","Comic Sans MS"];
 
 const CAP_PARTS = [
-  {id:"button",    label:"Button Top",  cssVar:"--cap-button",    def:"#d14257"},
+  {id:"button",    label:"Button",       cssVar:"--cap-button",    def:"#d14257"},
   {id:"front",     label:"Front Panel", cssVar:"--cap-front",     def:"#d14257"},
   {id:"brim",      label:"Brim",        cssVar:"--cap-brim",      def:"#000000"},
   {id:"stripe1",   label:"Stripe 1",    cssVar:"--cap-stripe1",   def:"#f0f1a2"},
@@ -249,16 +271,62 @@ const state = {
   form: {name:'',email:'',phone:'',qty:'',notes:''},
   sent: false,
   nextId: 1,
+  zoom: 1,
+  underbrimPhoto: null,
 };
 
 // ── CAP SVG ───────────────────────────────────────────────────────────────────
+const UNDERBRIM_PATH_D = "M -11.663587,-7.8146679 C -15.360977,-0.51618118 16.27038,37.987266 46.228618,47.502327 81.246716,58.624455 145.61487,61.97261 187.44654,23.095911 c 11.68455,-10.035449 19.1985,-28.4951559 19.1985,-28.4951559 0,0 -0.23598,46.2374879 0.088,61.2044879 -2.41026,36.28164 -5.32556,50.435057 -21.32169,67.872577 -15.17392,16.54122 -39.20101,23.97564 -62.17804,25.44523 -8.85116,0.56611 -28.169028,0.98469 -42.198538,-0.0364 C 68.947469,148.20697 56.484424,147.89853 45.052276,143.85321 35.519782,140.4801 26.493988,135.11316 18.940952,128.3606 12.143898,122.2839 6.3516149,114.77146 2.4188271,106.52391 -3.9795861,93.105632 -5.9657829,77.895075 -8.3003767,63.199552 -11.981741,40.026542 -12.12268,-7.8146679 -12.12268,-7.8146679";
+const UNDERBRIM_TRANSFORM = "matrix(0.22653336,0,0,-0.22520842,212.96639,100.38281)";
+
 function renderCap() {
   const wrap = document.getElementById('cap-svg-wrap');
   const cssVars = CAP_PARTS.map(p => `${p.cssVar}:${state.colours[p.id]}`).join(';');
+  const extraDefs = state.underbrimPhoto
+    ? `<clipPath id="underbrim-photo-clip"><path d="${UNDERBRIM_PATH_D}" transform="${UNDERBRIM_TRANSFORM}"/></clipPath>`
+    : '';
+  const photoImg = state.underbrimPhoto
+    ? `<image href="${state.underbrimPhoto}" x="210" y="65" width="52" height="40" preserveAspectRatio="xMidYMid slice" clip-path="url(#underbrim-photo-clip)" opacity="0.93"/>`
+    : '';
   wrap.innerHTML = `<svg viewBox="10 50 260 130" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="${cssVars};width:100%;height:100%;display:block">
-    <defs>${DEFS}</defs>
+    <defs>${DEFS}${extraDefs}</defs>
     <g>${CAP_LAYERS}</g>
+    ${photoImg}
   </svg>`;
+}
+
+function changeZoom(dir) {
+  const steps = [0.25, 0.33, 0.5, 0.67, 0.75, 1, 1.25, 1.5, 2, 3];
+  const cur = steps.findIndex(s => Math.abs(s - state.zoom) < 0.01);
+  const next = Math.max(0, Math.min(steps.length-1, (cur === -1 ? 5 : cur) + dir));
+  state.zoom = steps[next];
+  applyZoom();
+}
+
+function applyZoom() {
+  const stage = document.getElementById('zoom-stage');
+  const scroller = document.getElementById('zoom-scroller');
+  if (!stage || !scroller) return;
+  const z = state.zoom;
+  // 1. Apply visual scale from top-left origin
+  stage.style.transform = 'scale(' + z + ')';
+  stage.style.transformOrigin = 'top left';
+  // 2. Measure natural size of stage at scale=1, then compute scaled size
+  const stageW = stage.scrollWidth / z;  // approximate natural width
+  const stageH = stage.scrollHeight / z;
+  const scaledW = stageW * z;
+  const scaledH = stageH * z;
+  const viewW = scroller.clientWidth;
+  const viewH = scroller.clientHeight;
+  // 3. Center via margin when smaller than scroller; let scroll handle the rest
+  const marginX = Math.max(0, (viewW - scaledW) / 2);
+  const marginY = Math.max(0, (viewH - scaledH) / 2);
+  stage.style.marginLeft = marginX + 'px';
+  stage.style.marginTop  = marginY + 'px';
+  // 4. Expand scroller so scrollbars appear when larger than viewport
+  stage.style.width  = scaledW + 'px';
+  stage.style.height = scaledH + 'px';
+  document.getElementById('zoom-label').textContent = Math.round(z*100) + '%';
 }
 
 function colourName(hex) {
@@ -319,16 +387,12 @@ function renderPanel() {
   if (state.tab === 'colours') panel.innerHTML = renderColoursPanel();
   else if (state.tab === 'text') panel.innerHTML = renderTextPanel();
   else if (state.tab === 'logo') panel.innerHTML = renderLogoPanel();
+  else if (state.tab === 'underbrim') panel.innerHTML = renderUnderbrimPanel();
   else if (state.tab === 'order') panel.innerHTML = renderOrderPanel();
   bindPanelEvents();
 }
 
 function renderColoursPanel() {
-  const dots = CAP_PARTS.map(p => `
-    <div class="strip-dot" style="background:${state.colours[p.id]};${state.colours[p.id]==='#ffffff'?'border:1.5px solid #ccc':''}"
-      title="${p.label}" onclick="openPicker('${p.id}')"></div>
-  `).join('');
-
   const rows = CAP_PARTS.map(p => `
     <div class="part-row" onclick="openPicker('${p.id}')">
       <div class="part-swatch" style="background:${state.colours[p.id]}"></div>
@@ -341,11 +405,7 @@ function renderColoursPanel() {
   `).join('');
 
   return `
-    <div class="colour-preview-strip">
-      <div class="strip-label">Your Cap Preview</div>
-      <div class="strip-swatches">${dots}</div>
-    </div>
-    <div class="section-label">Tap a part to change</div>
+    <div class="section-label">Tap a part to change colour</div>
     ${rows}
   `;
 }
@@ -367,19 +427,6 @@ function renderTextPanel() {
       <span>${s.label}</span>
     </button>`;
   }).join('');
-
-  const curveSlider = state.tCurve !== 0 ? `
-    <div>
-      <div style="display:flex;justify-content:space-between;font-size:10px;color:#9A8A6A;font-weight:600;margin-bottom:4px">
-        <span>Curve amount</span><span style="color:#C08B3D;font-weight:700">${Math.abs(state.tCurve)}</span>
-      </div>
-      <input type="range" min="1" max="100" value="${Math.abs(state.tCurve)}" id="curve-slider"
-        style="width:100%;accent-color:#C08B3D"/>
-      <div style="display:flex;justify-content:space-between;font-size:9px;color:#9A8A6A;margin-top:1px">
-        <span>Gentle</span><span>Strong</span>
-      </div>
-    </div>
-  ` : '';
 
   const fontOptions = FONTS.map(f => `<option${f===state.font?' selected':''}>${f}</option>`).join('');
 
@@ -410,8 +457,7 @@ function renderTextPanel() {
     </div>
     <div>
       <div class="field-label">Shape</div>
-      <div style="display:flex;gap:8px;margin-bottom:${state.tCurve!==0?'8px':'0'}">${shapeButtons}</div>
-      ${curveSlider}
+      <div style="display:flex;gap:8px">${shapeButtons}</div>
     </div>
     <button class="btn-primary" onclick="addText()">✚ Add Text to Cap</button>
     ${textItems ? `<div class="section-label" style="margin-top:4px">On Cap</div>${textItems}` : ''}
@@ -439,6 +485,56 @@ function renderLogoPanel() {
       <div style="display:flex;gap:8px;flex-wrap:wrap">${thumbs}</div>
     ` : ''}
   `;
+}
+
+function renderUnderbrimPanel() {
+  const hasPhoto = !!state.underbrimPhoto;
+  return `
+    <div class="section-label">Photo printed on the underbrim</div>
+    <div class="underbrim-drop" id="underbrim-drop" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleUnderbrimDrop(event)">
+      <input type="file" accept="image/*" onchange="handleUnderbrimFile(this.files[0])"/>
+      ${hasPhoto
+        ? `<div style="font-size:20px;margin-bottom:6px">🖼️</div>
+           <div style="font-size:12px;font-weight:700;color:#C08B3D">Photo uploaded!</div>
+           <div style="font-size:10px;color:#9A8A6A;margin-top:2px">Tap to replace</div>`
+        : `<div style="font-size:28px;margin-bottom:8px">📸</div>
+           <div style="font-size:12px;font-weight:700;color:#47360B">Upload a photo</div>
+           <div style="font-size:10px;color:#9A8A6A;margin-top:4px">PNG, JPG or SVG<br>Applied instantly to underbrim</div>`
+      }
+    </div>
+    ${hasPhoto ? `
+      <img class="underbrim-preview" src="${state.underbrimPhoto}" alt="Underbrim photo"/>
+      <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="removeUnderbrimPhoto()">✕ Remove Photo</button>
+    ` : ''}
+    <div style="background:#fff;border-radius:10px;padding:10px 12px;border:1.5px solid #D4CFC0;margin-top:4px">
+      <div style="font-size:10px;font-weight:700;color:#9A8A6A;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">💡 Tip</div>
+      <div style="font-size:11px;color:#47360B;line-height:1.5">Customers love adding a personal photo, team photo or custom pattern to the underbrim. Works great with high contrast images.</div>
+    </div>
+  `;
+}
+
+function handleUnderbrimFile(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    state.underbrimPhoto = e.target.result;
+    renderCap();
+    renderPanel();
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleUnderbrimDrop(e) {
+  e.preventDefault();
+  document.getElementById('underbrim-drop')?.classList.remove('drag-over');
+  const file = e.dataTransfer?.files?.[0];
+  if (file) handleUnderbrimFile(file);
+}
+
+function removeUnderbrimPhoto() {
+  state.underbrimPhoto = null;
+  renderCap();
+  renderPanel();
 }
 
 function renderOrderPanel() {
@@ -564,7 +660,8 @@ function submitOrder() {
   const cl = CAP_PARTS.map(p=>`${p.label}: ${colourName(state.colours[p.id])} (${state.colours[p.id]})`).join('\n');
   const tl = state.items.filter(i=>i.type==='text').map(i=>`"${i.text}" | ${i.font} | ${i.size}px | ${i.color}`).join('\n') || 'None';
   const f = state.form;
-  const body = `CAP DESIGN ORDER\n================\nName: ${f.name}\nEmail: ${f.email}\nPhone: ${f.phone||'—'}\nQty: ${f.qty||'—'}\nNotes: ${f.notes||'—'}\n\nCOLOURS:\n${cl}\n\nTEXT:\n${tl}\n\nLOGOS: ${state.items.filter(i=>i.type==='logo').length}`;
+  const ul = state.underbrimPhoto ? 'Yes (photo attached)' : 'None';
+  const body = `CAP DESIGN ORDER\n================\nName: ${f.name}\nEmail: ${f.email}\nPhone: ${f.phone||'—'}\nQty: ${f.qty||'—'}\nNotes: ${f.notes||'—'}\n\nCOLOURS:\n${cl}\n\nTEXT:\n${tl}\n\nLOGOS: ${state.items.filter(i=>i.type==='logo').length}\n\nUNDERBRIM PHOTO: ${ul}`;
   window.open(`mailto:hello@brandemau.com?subject=Cap Design - ${f.name}&body=${encodeURIComponent(body)}`);
   state.sent = true;
   renderPanel();
@@ -683,11 +780,7 @@ function createDragItem(item) {
         <button class="tb-shape${item.curve<0?' active':''}" onclick="reshapeItem(${item.id},${-(Math.abs(item.curve)||50)})" title="Arch Down">
           <svg width="22" height="14" viewBox="0 0 22 14"><path d="M2 2 Q11 12 20 2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><text x="11" y="7" text-anchor="middle" font-size="7" font-family="Arial" font-weight="bold" fill="currentColor">ABC</text></svg>
         </button>
-        ${item.curve!==0 ? `
-          <div class="tb-div"></div>
-          <input type="range" min="1" max="100" value="${Math.abs(item.curve)}" style="width:60px;accent-color:#FCD68A;cursor:pointer" onchange="curveItem(${item.id},${item.curve>0?1:-1},this.value)" oninput="curveItem(${item.id},${item.curve>0?1:-1},this.value)"/>
-          <span style="color:#FCD68A;font-size:10px;font-weight:700;min-width:22px;text-align:right">${Math.abs(item.curve)}</span>
-        ` : ''}
+
       ` : ''}
     `;
     el.appendChild(tb);
