@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,20 +20,20 @@ input,select,textarea{font-family:inherit}
 #order-btn{background:#F74D24;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:700;color:#fff;border:none;margin-left:auto;font-family:'Black Han Sans',sans-serif;letter-spacing:1px;box-shadow:0 3px 10px rgba(247,77,36,.33)}
 #order-btn:hover{opacity:.9;transform:translateY(-1px)}
 /* BODY */
-#body{flex:1;display:flex;overflow:hidden;min-height:0}
+#body{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
 /* SIDEBAR */
-#sidebar{width:280px;flex-shrink:0;border-right:1.5px solid #D4CFC0;background:#EAE9E1;display:flex;flex-direction:column;overflow:hidden}
-#tabs{display:flex;border-bottom:1.5px solid #D4CFC0;flex-shrink:0}
-.tab-btn{flex:1;padding:10px 4px;border:none;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;line-height:1.5;background:transparent;color:#9A8A6A;border-bottom:2px solid transparent;transition:all .15s}
+#sidebar{width:100%;flex-shrink:0;border-top:1.5px solid #D4CFC0;border-right:none;background:#EAE9E1;display:flex;flex-direction:column;overflow:hidden;max-height:42vh}
+#tabs{display:flex;border-bottom:1.5px solid #D4CFC0;flex-shrink:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.tab-btn{flex:1;padding:8px 6px;border:none;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;line-height:1.4;background:transparent;color:#9A8A6A;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;min-width:56px}
 .tab-btn.active{background:#fff;color:#C08B3D;border-bottom:2px solid #C08B3D}
-.tab-btn .tab-icon{font-size:18px;display:block;margin-bottom:2px}
+.tab-btn .tab-icon{font-size:16px;display:block;margin-bottom:1px}
 #panel{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
 /* CANVAS */
-#canvas-area{flex:1;display:flex;flex-direction:column;background:#E8E6DC;position:relative;overflow:hidden}
+#canvas-area{flex:1;display:flex;flex-direction:column;background:#E8E6DC;overflow:hidden;min-height:0;position:relative}
 .dot-grid{position:fixed;inset:0;background-image:radial-gradient(circle,rgba(71,54,11,.08) 1px,transparent 1px);background-size:24px 24px;pointer-events:none;z-index:0}
-#zoom-scroller{flex:1;overflow:auto;position:relative;z-index:1}
-#zoom-stage{display:inline-flex;align-items:center;justify-content:center;padding:32px;transform-origin:top left}
-#whiteboard{position:relative;background:#fff;border-radius:16px;box-shadow:0 8px 48px rgba(71,54,11,.18),0 2px 12px rgba(71,54,11,.10);overflow:visible;aspect-ratio:2/1;width:min(calc(100vw - 340px),min(1100px,calc((100dvh - 100px) * 2)));flex-shrink:0}
+#zoom-scroller{flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:20px}
+#zoom-stage{display:flex;align-items:center;justify-content:center;width:100%}
+#whiteboard{position:relative;background:#fff;border-radius:16px;box-shadow:0 8px 48px rgba(71,54,11,.18),0 2px 12px rgba(71,54,11,.10);overflow:visible;aspect-ratio:2/1;width:min(calc(100vw - 32px),min(1200px,calc((58dvh) * 2)));flex-shrink:0}
 #cap-svg-wrap{position:absolute;inset:0}
 #cap-svg-wrap svg{width:100%;height:100%;display:block}
 #canvas-items{position:absolute;inset:0;overflow:visible}
@@ -72,7 +73,7 @@ input,select,textarea{font-family:inherit}
 .drag-content{position:relative;outline:2px dashed transparent;outline-offset:3px;border-radius:4px;padding:1px}
 .drag-item.selected .drag-content{outline-color:rgba(247,77,36,.85)}
 .drag-delete{position:absolute;top:-12px;right:-12px;background:#F74D24;border:2px solid #fff;color:#fff;border-radius:50%;width:22px;height:22px;font-size:11px;cursor:pointer;font-weight:bold;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3);z-index:30;border:none}
-.item-toolbar{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;background:rgba(28,22,8,.93);backdrop-filter:blur(10px);border-radius:12px;padding:5px 8px;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.4);z-index:9999;border:1px solid rgba(255,255,255,.08);pointer-events:auto}
+.item-toolbar{position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;background:rgba(28,22,8,.93);backdrop-filter:blur(10px);border-radius:12px;padding:5px 8px;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.4);z-index:9999;border:1px solid rgba(255,255,255,.08);pointer-events:auto}
 .tb-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#ccc;cursor:pointer;font-size:15px;line-height:1;padding:3px 7px;border-radius:6px;font-weight:700}
 .tb-btn:hover{background:rgba(255,255,255,.15)}
 .tb-size{color:#FCD68A;font-size:10px;min-width:30px;text-align:center;font-weight:700}
@@ -115,12 +116,9 @@ input,select,textarea{font-family:inherit}
 .section-label{font-size:10px;color:#9A8A6A;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2px;margin-top:2px}
 /* INFO BOX */
 .info-box{background:#DEDAD0;border-radius:8px;padding:8px 10px;border:1px solid #D4CFC0;font-size:11px;color:#9A8A6A;line-height:1.6}
-@media(max-width:700px){
-  #body{flex-direction:column}
-  #sidebar{width:100%;flex:0 0 auto;max-height:45dvh;border-right:none;border-top:1.5px solid #D4CFC0;order:1}
-  #canvas-area{order:-1;flex:1;padding:8px}
-  #whiteboard{width:min(96vw,calc((55dvh) * 2));border-radius:10px}
-  .tab-btn .tab-icon{font-size:20px}
+@media(max-width:600px){
+  #sidebar{max-height:48vh}
+  #whiteboard{width:min(calc(100% - 16px), calc((52vh) * 2));border-radius:10px}
 }
 </style>
 </head>
@@ -135,6 +133,23 @@ input,select,textarea{font-family:inherit}
     <button id="order-btn" onclick="switchTab('order')">PLACE ORDER</button>
   </div>
   <div id="body">
+    <div id="canvas-area">
+      <div class="dot-grid"></div>
+      <div id="zoom-scroller">
+      <div id="zoom-stage">
+      <div id="whiteboard">
+        <div id="cap-svg-wrap"></div>
+        <div id="canvas-items"></div>
+        <div id="hint"><div id="hint-inner">Add text or a logo using the panel below</div></div>
+      </div>
+      </div>
+      </div>
+      <div class="zoom-controls">
+        <button class="zoom-btn" onclick="changeZoom(-1)" title="Zoom out">−</button>
+        <span class="zoom-label" id="zoom-label">100%</span>
+        <button class="zoom-btn" onclick="changeZoom(1)" title="Zoom in">+</button>
+      </div>
+    </div>
     <div id="sidebar">
       <div id="tabs">
         <button class="tab-btn active" data-tab="colours" onclick="switchTab('colours')"><span class="tab-icon">🎨</span>Colours</button>
@@ -144,23 +159,6 @@ input,select,textarea{font-family:inherit}
         <button class="tab-btn" data-tab="order" onclick="switchTab('order')"><span class="tab-icon">📋</span>Order</button>
       </div>
       <div id="panel"></div>
-    </div>
-    <div id="canvas-area">
-      <div class="dot-grid"></div>
-      <div id="zoom-scroller">
-      <div id="zoom-stage">
-      <div id="whiteboard">
-        <div id="cap-svg-wrap"></div>
-        <div id="canvas-items"></div>
-        <div id="hint"><div id="hint-inner">Add text or a logo using the panel on the left</div></div>
-      </div>
-      </div>
-      </div>
-      <div class="zoom-controls">
-        <button class="zoom-btn" onclick="changeZoom(-1)" title="Zoom out">−</button>
-        <span class="zoom-label" id="zoom-label">100%</span>
-        <button class="zoom-btn" onclick="changeZoom(1)" title="Zoom in">+</button>
-      </div>
     </div>
   </div>
 </div>
@@ -268,7 +266,8 @@ const state = {
   bold: false,
   italic: false,
   tCurve: 0,
-  form: {name:'',email:'',phone:'',qty:'',notes:''},
+  tBg: 'none',
+  form: {name:'',email:'',phone:'',qty:'',notes:'',sideTags:0,wantUnderbrim:false},
   sent: false,
   nextId: 1,
   zoom: 1,
@@ -279,7 +278,10 @@ const state = {
 const UNDERBRIM_PATH_D = "M -11.663587,-7.8146679 C -15.360977,-0.51618118 16.27038,37.987266 46.228618,47.502327 81.246716,58.624455 145.61487,61.97261 187.44654,23.095911 c 11.68455,-10.035449 19.1985,-28.4951559 19.1985,-28.4951559 0,0 -0.23598,46.2374879 0.088,61.2044879 -2.41026,36.28164 -5.32556,50.435057 -21.32169,67.872577 -15.17392,16.54122 -39.20101,23.97564 -62.17804,25.44523 -8.85116,0.56611 -28.169028,0.98469 -42.198538,-0.0364 C 68.947469,148.20697 56.484424,147.89853 45.052276,143.85321 35.519782,140.4801 26.493988,135.11316 18.940952,128.3606 12.143898,122.2839 6.3516149,114.77146 2.4188271,106.52391 -3.9795861,93.105632 -5.9657829,77.895075 -8.3003767,63.199552 -11.981741,40.026542 -12.12268,-7.8146679 -12.12268,-7.8146679";
 const UNDERBRIM_TRANSFORM = "matrix(0.22653336,0,0,-0.22520842,212.96639,100.38281)";
 
+let _renderingCap = false;
 function renderCap() {
+  if (_renderingCap) return;
+  _renderingCap = true;
   const wrap = document.getElementById('cap-svg-wrap');
   const cssVars = CAP_PARTS.map(p => `${p.cssVar}:${state.colours[p.id]}`).join(';');
   const extraDefs = state.underbrimPhoto
@@ -293,6 +295,7 @@ function renderCap() {
     <g>${CAP_LAYERS}</g>
     ${photoImg}
   </svg>`;
+  _renderingCap = false;
 }
 
 function changeZoom(dir) {
@@ -305,27 +308,9 @@ function changeZoom(dir) {
 
 function applyZoom() {
   const stage = document.getElementById('zoom-stage');
-  const scroller = document.getElementById('zoom-scroller');
-  if (!stage || !scroller) return;
+  if (!stage) return;
   const z = state.zoom;
-  // 1. Apply visual scale from top-left origin
-  stage.style.transform = 'scale(' + z + ')';
-  stage.style.transformOrigin = 'top left';
-  // 2. Measure natural size of stage at scale=1, then compute scaled size
-  const stageW = stage.scrollWidth / z;  // approximate natural width
-  const stageH = stage.scrollHeight / z;
-  const scaledW = stageW * z;
-  const scaledH = stageH * z;
-  const viewW = scroller.clientWidth;
-  const viewH = scroller.clientHeight;
-  // 3. Center via margin when smaller than scroller; let scroll handle the rest
-  const marginX = Math.max(0, (viewW - scaledW) / 2);
-  const marginY = Math.max(0, (viewH - scaledH) / 2);
-  stage.style.marginLeft = marginX + 'px';
-  stage.style.marginTop  = marginY + 'px';
-  // 4. Expand scroller so scrollbars appear when larger than viewport
-  stage.style.width  = scaledW + 'px';
-  stage.style.height = scaledH + 'px';
+  stage.style.transform = z === 1 ? '' : 'scale(' + z + ')';
   document.getElementById('zoom-label').textContent = Math.round(z*100) + '%';
 }
 
@@ -411,33 +396,84 @@ function renderColoursPanel() {
 }
 
 function renderTextPanel() {
-  const shapeButtons = [
-    {v:0,   label:'None',     demo:'none'},
-    {v:50,  label:'Arch Up',  demo:'up'},
-    {v:-50, label:'Arch Down',demo:'down'},
-  ].map(s => {
-    const active = s.v===0 ? state.tCurve===0 : (s.v>0 ? state.tCurve>0 : state.tCurve<0);
-    const svgDemo = s.demo==='none'
-      ? `<text x="22" y="20" text-anchor="middle" font-size="11" font-family="Arial Black,Impact" font-weight="900" fill="${active?'#C08B3D':'#47360B'}">TITLE</text>`
-      : s.demo==='up'
-      ? `<path id="ud" d="M 4 22 A 25 25 0 0 1 40 22" fill="none"/><text font-size="10" font-family="Arial Black" font-weight="900" fill="${active?'#C08B3D':'#47360B'}"><textPath href="#ud" startOffset="50%" text-anchor="middle">TITLE</textPath></text>`
-      : `<path id="dd" d="M 4 8 A 25 25 0 0 0 40 8" fill="none"/><text font-size="10" font-family="Arial Black" font-weight="900" fill="${active?'#C08B3D':'#47360B'}"><textPath href="#dd" startOffset="50%" text-anchor="middle">TITLE</textPath></text>`;
-    return `<button class="shape-btn${active?' active':''}" onclick="setShape(${s.v})">
-      <svg width="44" height="28" viewBox="0 0 44 28">${svgDemo}</svg>
-      <span>${s.label}</span>
-    </button>`;
-  }).join('');
+  const sel = state.selId ? state.items.find(i => i.id === state.selId && i.type === 'text') : null;
 
+  // ── SELECTED TEXT ITEM EDITOR ──
+  const selectedEditor = sel ? (() => {
+    const shapeButtons = [
+      {v:0,   label:'None',  icon:'<text x="11" y="11" text-anchor="middle" font-size="9" font-family="Arial" font-weight="bold" fill="currentColor">ABC</text>'},
+      {v:50,  label:'Arch ↑',icon:'<path d="M2 12 Q11 2 20 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'},
+      {v:-50, label:'Arch ↓',icon:'<path d="M2 2 Q11 12 20 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'},
+    ].map(s => {
+      const active = s.v===0 ? sel.curve===0 : (s.v>0 ? sel.curve>0 : sel.curve<0);
+      return `<button class="shape-btn${active?' active':''}" onclick="reshapeItem(${sel.id},${s.v>0?Math.abs(sel.curve)||50:s.v<0?-(Math.abs(sel.curve)||50):0});renderPanel()">
+        <svg width="22" height="14" viewBox="0 0 22 14">${s.icon}</svg>
+        <span>${s.label}</span>
+      </button>`;
+    }).join('');
+    const fontOpts = FONTS.map(f => `<option${f===sel.font?' selected':''}>${f}</option>`).join('');
+    return `
+      <div style="background:#fff;border:2px solid #C08B3D;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+          <div style="font-size:10px;font-weight:700;color:#C08B3D;letter-spacing:1px;text-transform:uppercase">✏️ Editing: "${escHtml(sel.text.substring(0,16))}${sel.text.length>16?'…':''}"</div>
+          <button onclick="state.selId=null;renderCanvas();renderPanel()" style="background:none;border:none;color:#9A8A6A;font-size:16px;cursor:pointer;padding:0;line-height:1">✕</button>
+        </div>
+        <input class="text-input" style="font-size:13px" value="${escHtml(sel.text)}" oninput="state.items.find(i=>i.id===${sel.id}).text=this.value;renderCanvas()"/>
+        <div>
+          <div class="field-label">Font</div>
+          <select class="text-input" style="padding:7px 8px;font-size:12px" onchange="state.items.find(i=>i.id===${sel.id}).font=this.value;renderCanvas()">${fontOpts}</select>
+        </div>
+        <div>
+          <div class="field-label">Size: ${sel.size}px</div>
+          <input type="range" min="10" max="60" value="${sel.size}" style="width:100%;accent-color:#C08B3D"
+            oninput="state.items.find(i=>i.id===${sel.id}).size=+this.value;renderCanvas();this.previousElementSibling.textContent='Size: '+this.value+'px'"/>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div>
+            <div class="field-label">Text</div>
+            <input type="color" value="${sel.color}" style="width:40px;height:32px;border-radius:8px;border:1.5px solid #D4CFC0;background:none;cursor:pointer;padding:2px"
+              oninput="recolorItem(${sel.id},this.value)"/>
+          </div>
+          <div>
+            <div class="field-label">Background</div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <input type="color" value="${sel.textBg && sel.textBg!=='none' ? sel.textBg : '#ffffff'}" style="width:40px;height:32px;border-radius:8px;border:1.5px solid #D4CFC0;background:none;cursor:pointer;padding:2px;${!sel.textBg||sel.textBg==='none'?'opacity:.4':''}" id="sel-bg-color"
+                oninput="state.items.find(i=>i.id===${sel.id}).textBg=this.value;renderCanvas()"/>
+            </div>
+          </div>
+          <div style="margin-top:18px;display:flex;flex-direction:column;align-items:center;gap:3px">
+            <label style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer" title="${sel.textBg&&sel.textBg!=='none'?'Remove background':'No background'}">
+              <input type="checkbox" ${sel.textBg&&sel.textBg!=='none'?'checked':''} style="width:16px;height:16px;accent-color:#C08B3D;cursor:pointer"
+                onchange="state.items.find(i=>i.id===${sel.id}).textBg=this.checked?(document.getElementById('sel-bg-color')?.value||'#ffffff'):'none';renderCanvas();renderPanel()"/>
+            </label>
+            <span style="font-size:8px;color:#9A8A6A">On</span>
+          </div>
+          <button class="btn-secondary${sel.bold?' active':''}" style="margin-top:18px;font-weight:bold;font-size:11px;padding:5px 8px"
+            onclick="state.items.find(i=>i.id===${sel.id}).bold=!state.items.find(i=>i.id===${sel.id}).bold;renderCanvas();renderPanel()">B</button>
+          <button class="btn-secondary${sel.italic?' active':''}" style="margin-top:18px;font-style:italic;font-size:11px;padding:5px 8px"
+            onclick="state.items.find(i=>i.id===${sel.id}).italic=!state.items.find(i=>i.id===${sel.id}).italic;renderCanvas();renderPanel()">I</button>
+        </div>
+        <div>
+          <div class="field-label">Shape</div>
+          <div style="display:flex;gap:6px">${shapeButtons}</div>
+        </div>
+        <button onclick="deleteItem(${sel.id})" style="background:#fff;border:1.5px solid #F74D24;border-radius:8px;color:#F74D24;font-size:12px;font-weight:700;padding:7px;cursor:pointer;width:100%">🗑 Delete this text</button>
+      </div>
+      <div style="border-top:1.5px solid #D4CFC0;margin:4px 0"></div>`;
+  })() : '';
+
+  // ── ADD NEW TEXT ──
   const fontOptions = FONTS.map(f => `<option${f===state.font?' selected':''}>${f}</option>`).join('');
-
   const textItems = state.items.filter(i=>i.type==='text').map(t => `
-    <div class="text-list-item">
+    <div class="text-list-item" onclick="selectItem(${t.id})" style="cursor:pointer;${state.selId===t.id?'border-color:#C08B3D;':''}">
       <span style="font-family:${t.font};color:${t.color};font-size:12px;font-weight:${t.bold?'bold':'normal'};font-style:${t.italic?'italic':'normal'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px">${t.text}</span>
-      <button class="text-list-del" onclick="deleteItem(${t.id})">✕</button>
+      <button class="text-list-del" onclick="event.stopPropagation();deleteItem(${t.id})">✕</button>
     </div>
   `).join('');
 
   return `
+    ${selectedEditor}
+    <div class="section-label">Add new text</div>
     <input id="new-text-input" class="text-input" value="${escHtml(state.newText)}" placeholder="Type your text…" oninput="state.newText=this.value"/>
     <div>
       <div class="field-label">Font</div>
@@ -452,15 +488,24 @@ function renderTextPanel() {
         <div class="field-label">Colour</div>
         <input type="color" id="text-color" value="${state.tColor}" style="width:40px;height:32px;border-radius:8px;border:1.5px solid #D4CFC0;background:none;cursor:pointer;padding:2px"/>
       </div>
-      <button id="bold-btn" class="btn-secondary${state.bold?' active':''}" style="margin-top:18px;font-weight:bold" onclick="state.bold=!state.bold;renderPanel()"> B </button>
-      <button id="italic-btn" class="btn-secondary${state.italic?' active':''}" style="margin-top:18px;font-style:italic" onclick="state.italic=!state.italic;renderPanel()">I </button>
+      <button id="bold-btn" class="btn-secondary${state.bold?' active':''}" style="margin-top:18px;font-weight:bold;font-size:11px;padding:5px 8px" onclick="state.bold=!state.bold;renderPanel()">B</button>
+      <button id="italic-btn" class="btn-secondary${state.italic?' active':''}" style="margin-top:18px;font-style:italic;font-size:11px;padding:5px 8px" onclick="state.italic=!state.italic;renderPanel()">I</button>
     </div>
-    <div>
-      <div class="field-label">Shape</div>
-      <div style="display:flex;gap:8px">${shapeButtons}</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div>
+        <div class="field-label">Background</div>
+        <input type="color" id="new-text-bg" value="${state.tBg && state.tBg!=='none' ? state.tBg : '#ffffff'}" style="width:40px;height:32px;border-radius:8px;border:1.5px solid #D4CFC0;background:none;cursor:pointer;padding:2px;${!state.tBg||state.tBg==='none'?'opacity:.4':''}"
+          oninput="state.tBg=this.value"/>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;margin-top:18px">
+        <input type="checkbox" ${state.tBg&&state.tBg!=='none'?'checked':''} style="width:16px;height:16px;accent-color:#C08B3D;cursor:pointer"
+          onchange="state.tBg=this.checked?(document.getElementById('new-text-bg')?.value||'#ffffff'):'none';renderPanel()"/>
+        <span style="font-size:8px;color:#9A8A6A">On</span>
+      </div>
+      <div style="font-size:10px;color:#9A8A6A;margin-top:18px;line-height:1.4">25px radius<br>25px padding</div>
     </div>
     <button class="btn-primary" onclick="addText()">✚ Add Text to Cap</button>
-    ${textItems ? `<div class="section-label" style="margin-top:4px">On Cap</div>${textItems}` : ''}
+    ${textItems ? `<div class="section-label" style="margin-top:4px">On Cap — tap to edit</div>${textItems}` : ''}
   `;
 }
 
@@ -487,9 +532,22 @@ function renderLogoPanel() {
   `;
 }
 
+
+// ── TAG SVG ───────────────────────────────────────────────────────────────────
+// Tag is fixed on the stripe band — centered horizontally, vertically centered on the stripe.
+// Stripe band center in SVG viewBox "10 50 260 130" is approximately y=95.5
+// Front panel horizontal center is approximately x=130
+
 function renderUnderbrimPanel() {
   const hasPhoto = !!state.underbrimPhoto;
   return `
+    <div style="background:#FFF8EE;border:1.5px solid #FCD68A;border-radius:10px;padding:10px 12px;margin-bottom:4px">
+      <div style="font-size:11px;font-weight:700;color:#C08B3D;margin-bottom:2px">💰 Pricing</div>
+      <div style="font-size:11px;color:#47360B;line-height:1.6">
+        Underbrim photo: <strong>+$1.00 per hat</strong><br>
+        <span style="font-size:10px;color:#9A8A6A">Full-colour photo printed on the inside of the brim</span>
+      </div>
+    </div>
     <div class="section-label">Photo printed on the underbrim</div>
     <div class="underbrim-drop" id="underbrim-drop" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleUnderbrimDrop(event)">
       <input type="file" accept="image/*" onchange="handleUnderbrimFile(this.files[0])"/>
@@ -557,35 +615,134 @@ function renderOrderPanel() {
     </div>
   `).join('');
 
-  const fields = [
-    {k:'name',label:'Full Name *',type:'text',ph:'Jane Smith'},
-    {k:'email',label:'Email *',type:'email',ph:'jane@company.com'},
-    {k:'phone',label:'Phone',type:'tel',ph:'+61 4xx xxx xxx'},
-    {k:'qty',label:'Quantity',type:'number',ph:'e.g. 50'},
-  ].map(f => `
-    <div>
-      <div class="field-label">${f.label}</div>
-      <input type="${f.type}" placeholder="${f.ph}" value="${escHtml(state.form[f.k])}"
-        class="text-input" onchange="state.form['${f.k}']=this.value;renderPanel()" 
-        oninput="state.form['${f.k}']=this.value"/>
+  const qty = parseInt(state.form.qty) || 0;
+  const sideTags = Math.min(5, Math.max(0, parseInt(state.form.sideTags) || 0));
+  const wantUnderbrim = !!state.form.wantUnderbrim;
+  const TIERS = [
+    {min:25,  max:49,  price:30, label:'25–49 hats'},
+    {min:50,  max:99,  price:22, label:'50–99 hats'},
+    {min:100, max:199, price:18, label:'100–199 hats'},
+    {min:200, max:499, price:16, label:'200–499 hats'},
+    {min:500, max:Infinity, price:14, label:'500+ hats'},
+  ];
+  const activeTier = TIERS.find(t => qty >= t.min && qty <= t.max);
+  const underbrimCost = wantUnderbrim ? 1.00 : 0;
+  const sideTagCost   = sideTags * 0.50;
+  const extraPerHat   = underbrimCost + sideTagCost;
+  const basePerHat    = activeTier ? activeTier.price : null;
+  const totalPerHat   = basePerHat !== null ? basePerHat + extraPerHat : null;
+  const totalOrder    = totalPerHat !== null && qty >= 25 ? totalPerHat * qty : null;
+
+  const tierRows = TIERS.map(t => {
+    const active = activeTier && activeTier.min === t.min;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-radius:7px;background:${active?'#C08B3D':'transparent'}">
+      <span style="font-size:11px;color:${active?'#fff':'#47360B'};font-weight:${active?'700':'400'}">${t.label}</span>
+      <span style="font-size:11px;font-weight:700;color:${active?'#fff':'#47360B'}">$${t.price.toFixed(2)}/hat</span>
+    </div>`;
+  }).join('');
+
+  // Stepper buttons for side tags
+  const tagStepper = `
+    <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+      <button onclick="state.form.sideTags=Math.max(0,(parseInt(state.form.sideTags)||0)-1);renderPanel()"
+        style="width:30px;height:30px;border-radius:8px;border:1.5px solid #D4CFC0;background:#fff;font-size:16px;line-height:1;color:#47360B;display:flex;align-items:center;justify-content:center">−</button>
+      <div style="flex:1;text-align:center;font-size:18px;font-weight:700;color:#47360B">${sideTags}</div>
+      <button onclick="state.form.sideTags=Math.min(5,(parseInt(state.form.sideTags)||0)+1);renderPanel()"
+        style="width:30px;height:30px;border-radius:8px;border:1.5px solid #D4CFC0;background:#fff;font-size:16px;line-height:1;color:#47360B;display:flex;align-items:center;justify-content:center">+</button>
     </div>
-  `).join('');
+    ${sideTags > 0 ? `<div style="text-align:center;font-size:10px;color:#C08B3D;font-weight:600;margin-top:3px">${sideTags} tag${sideTags>1?'s':''} × $0.50 = +$${sideTagCost.toFixed(2)}/hat</div>` : '<div style="text-align:center;font-size:10px;color:#9A8A6A;margin-top:3px">Up to 5 tags · $0.50 each/hat</div>'}`;
+
+  // Underbrim toggle
+  const underbrimToggle = `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">
+      <div>
+        <div style="font-size:12px;font-weight:600;color:#47360B">Under-brim photo print</div>
+        <div style="font-size:10px;color:#9A8A6A">+$1.00 per hat · GST incl · free shipping</div>
+      </div>
+      <label style="position:relative;display:inline-block;width:40px;height:22px;cursor:pointer;flex-shrink:0">
+        <input type="checkbox" ${wantUnderbrim?'checked':''} style="opacity:0;width:0;height:0"
+          onchange="state.form.wantUnderbrim=this.checked;renderPanel()"/>
+        <span style="position:absolute;inset:0;background:${wantUnderbrim?'#C08B3D':'#D4CFC0'};border-radius:11px;transition:.2s">
+          <span style="position:absolute;top:2px;left:${wantUnderbrim?'20px':'2px'};width:18px;height:18px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span>
+        </span>
+      </label>
+    </div>`;
+
+  const estimateRows = [];
+  if (activeTier && qty >= 25) {
+    estimateRows.push([qty + ' hats × $' + activeTier.price.toFixed(2), '$' + (activeTier.price*qty).toFixed(2)]);
+    if (sideTags > 0) estimateRows.push([qty + ' × ' + sideTags + ' tag' + (sideTags>1?'s':'') + ' × $0.50', '$' + (sideTagCost*qty).toFixed(2)]);
+    if (wantUnderbrim) estimateRows.push([qty + ' × underbrim $1.00', '$' + qty.toFixed(2)]);
+  }
+  const estimateBlock = qty >= 25 && activeTier ? `
+    <div style="background:#C08B3D;border-radius:10px;padding:10px 12px">
+      <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">Your Estimate · GST incl · Free shipping</div>
+      ${estimateRows.map(([l,r]) => `<div style="display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.85);margin-bottom:3px"><span>${l}</span><span>${r}</span></div>`).join('')}
+      <div style="border-top:1px solid rgba(255,255,255,.25);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between">
+        <span style="font-size:13px;font-weight:700;color:#fff">Total (GST incl)</span>
+        <span style="font-size:13px;font-weight:700;color:#fff">$${totalOrder.toFixed(2)}</span>
+      </div>
+      <div style="font-size:9px;color:rgba(255,255,255,.6);margin-top:4px;text-align:right">🚚 Free shipping Australia-wide</div>
+    </div>` : qty > 0 && qty < 25 ? `
+    <div style="background:#F74D24;border-radius:10px;padding:10px 12px;font-size:11px;color:#fff;font-weight:600;text-align:center">
+      ⚠️ Minimum order is 25 hats
+    </div>` : `
+    <div style="background:#EAE9E1;border-radius:10px;padding:10px 12px;font-size:11px;color:#9A8A6A;text-align:center">
+      Enter a quantity above to see your estimate
+    </div>`;
 
   const canSubmit = state.form.name && state.form.email;
 
   return `
-    <div class="section-label">Design Summary</div>
+    <div style="background:#FFF8EE;border:1.5px solid #FCD68A;border-radius:12px;padding:10px 10px 8px">
+      <div style="font-size:10px;font-weight:700;color:#C08B3D;margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase">💰 Pricing · GST incl · Free shipping</div>
+      ${tierRows}
+    </div>
+
+    <div>
+      <div class="field-label">Quantity (min. 25)</div>
+      <input type="number" min="25" placeholder="e.g. 50" value="${escHtml(state.form.qty)}"
+        class="text-input" oninput="state.form.qty=this.value;renderPanel()"/>
+    </div>
+
+    <div style="background:#fff;border-radius:10px;padding:10px 12px;border:1.5px solid #D4CFC0">
+      <div style="font-size:10px;font-weight:700;color:#9A8A6A;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">Extras</div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:#47360B;margin-bottom:2px">Side embroidery tags</div>
+        <div style="font-size:10px;color:#9A8A6A;margin-bottom:4px">+$0.50 per tag/hat · phone numbers, slogans etc.</div>
+        ${tagStepper}
+      </div>
+      <div style="border-top:1px solid #EAE9E1;margin-top:8px;padding-top:8px">
+        ${underbrimToggle}
+      </div>
+    </div>
+
+    ${estimateBlock}
+
+    <div class="section-label" style="margin-top:2px">Design Summary</div>
     <div style="background:#fff;border-radius:10px;padding:8px 10px;border:1.5px solid #D4CFC0">${summary}</div>
-    <div class="section-label" style="margin-top:4px">Your Details</div>
-    ${fields}
+
+    <div class="section-label" style="margin-top:2px">Your Details</div>
+    <div>
+      <div class="field-label">Name *</div>
+      <input type="text" placeholder="Your name" value="${escHtml(state.form.name)}" class="text-input" oninput="state.form.name=this.value"/>
+    </div>
+    <div>
+      <div class="field-label">Email *</div>
+      <input type="email" placeholder="your@email.com" value="${escHtml(state.form.email)}" class="text-input" oninput="state.form.email=this.value"/>
+    </div>
+    <div>
+      <div class="field-label">Phone</div>
+      <input type="tel" placeholder="+61 4xx xxx xxx" value="${escHtml(state.form.phone)}" class="text-input" oninput="state.form.phone=this.value"/>
+    </div>
     <div>
       <div class="field-label">Notes</div>
-      <textarea placeholder="Notes / deadline / requirements…" rows="3"
+      <textarea placeholder="Deadline, special requirements…" rows="3"
         class="text-input" style="resize:vertical"
         oninput="state.form.notes=this.value">${escHtml(state.form.notes)}</textarea>
     </div>
     <button class="btn-primary" ${canSubmit?'':'disabled'} onclick="submitOrder()">🚀 Submit My Design</button>
-    <div style="font-size:10px;color:#9A8A6A;text-align:center">We reply within 24 hours</div>
+    <div style="font-size:10px;color:#9A8A6A;text-align:center">We reply within 24 hours · 🚚 Free shipping Australia-wide</div>
   `;
 }
 
@@ -627,6 +784,7 @@ function addText() {
     id: state.nextId++, type:'text', text,
     font: state.font, size: state.tSize, color: state.tColor,
     bold: state.bold, italic: state.italic, curve: state.tCurve,
+    textBg: state.tBg || 'none',
     x: 60, y
   });
   state.newText = '';
@@ -656,13 +814,59 @@ function deleteItem(id) {
   updateHint();
 }
 
+function downloadDesignSVG() {
+  // Grab the current SVG from the cap preview
+  const svgEl = document.querySelector('#cap-svg-wrap svg');
+  if (!svgEl) return null;
+  const svgData = new XMLSerializer().serializeToString(svgEl);
+  const blob = new Blob([svgData], {type:'image/svg+xml'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'brandem-cap-design.svg';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return true;
+}
+
 function submitOrder() {
   const cl = CAP_PARTS.map(p=>`${p.label}: ${colourName(state.colours[p.id])} (${state.colours[p.id]})`).join('\n');
   const tl = state.items.filter(i=>i.type==='text').map(i=>`"${i.text}" | ${i.font} | ${i.size}px | ${i.color}`).join('\n') || 'None';
+  const ll = state.items.filter(i=>i.type==='logo').length;
   const f = state.form;
-  const ul = state.underbrimPhoto ? 'Yes (photo attached)' : 'None';
-  const body = `CAP DESIGN ORDER\n================\nName: ${f.name}\nEmail: ${f.email}\nPhone: ${f.phone||'—'}\nQty: ${f.qty||'—'}\nNotes: ${f.notes||'—'}\n\nCOLOURS:\n${cl}\n\nTEXT:\n${tl}\n\nLOGOS: ${state.items.filter(i=>i.type==='logo').length}\n\nUNDERBRIM PHOTO: ${ul}`;
-  window.open(`mailto:hello@brandemau.com?subject=Cap Design - ${f.name}&body=${encodeURIComponent(body)}`);
+  const sideTags = parseInt(state.form.sideTags) || 0;
+  const wantUnderbrim = !!state.form.wantUnderbrim;
+  const extras = [
+    sideTags > 0 ? '+ Side embroidery tags: ' + sideTags + ' × $0.50/hat' : null,
+    wantUnderbrim ? '+ Underbrim photo print: $1.00/hat' : null,
+  ].filter(Boolean).join('\n') || 'None';
+  const body = `CAP DESIGN ORDER
+================
+Name: ${f.name}
+Email: ${f.email}
+Phone: ${f.phone||'—'}
+Qty: ${f.qty||'—'}
+Notes: ${f.notes||'—'}
+
+COLOURS:
+${cl}
+
+TEXT ELEMENTS: ${tl}
+LOGOS: ${ll}
+EXTRAS: ${extras}
+
+---
+NOTE: Please also attach the downloaded cap design SVG file to this email.
+The file "brandem-cap-design.svg" should have downloaded automatically.`;
+
+  // 1. Download the SVG file
+  downloadDesignSVG();
+  // 2. Open mailto
+  setTimeout(() => {
+    window.open('mailto:howdy@brandemau.com?subject=Cap Design - ' + encodeURIComponent(f.name) + '&body=' + encodeURIComponent(body));
+  }, 400);
   state.sent = true;
   renderPanel();
 }
@@ -670,7 +874,7 @@ function submitOrder() {
 function resetAll() {
   state.colours = Object.fromEntries(CAP_PARTS.map(p=>[p.id,p.def]));
   state.items = []; state.selId = null; state.sent = false;
-  state.form = {name:'',email:'',phone:'',qty:'',notes:''};
+  state.form = {name:'',email:'',phone:'',qty:'',notes:'',sideTags:0,wantUnderbrim:false};
   renderCap(); renderCanvas(); updateHint(); switchTab('colours');
 }
 
@@ -734,12 +938,32 @@ function createDragItem(item) {
     const curve = item.curve || 0;
     if (curve !== 0) {
       const svg = makeCurvedTextSVG(item.text, item.font, item.size, item.color, item.bold, item.italic, curve);
-      content.innerHTML = svg || '';
+      const hasBg = item.textBg && item.textBg !== 'none';
+      if (hasBg) {
+        const wrap = document.createElement('div');
+        wrap.style.cssText = `background:${item.textBg};border-radius:25px;padding:25px;display:inline-block;line-height:0;pointer-events:none`;
+        wrap.innerHTML = svg || '';
+        content.appendChild(wrap);
+      } else {
+        content.innerHTML = svg || '';
+      }
     } else {
-      const span = document.createElement('span');
-      span.style.cssText = `font-family:${item.font};font-size:${item.size}px;color:${item.color};font-weight:${item.bold?'bold':'normal'};font-style:${item.italic?'italic':'normal'};white-space:nowrap;pointer-events:none;display:block;text-shadow:0 1px 4px rgba(0,0,0,.18);letter-spacing:.5px`;
-      span.textContent = item.text;
-      content.appendChild(span);
+      const hasBg = item.textBg && item.textBg !== 'none';
+      if (hasBg) {
+        // Wrap in a bg div that hugs the text, then put text inside
+        const bgWrap = document.createElement('div');
+        bgWrap.style.cssText = `display:inline-block;background:${item.textBg};border-radius:25px;padding:25px;pointer-events:none`;
+        const span = document.createElement('span');
+        span.style.cssText = `font-family:${item.font};font-size:${item.size}px;color:${item.color};font-weight:${item.bold?'bold':'normal'};font-style:${item.italic?'italic':'normal'};white-space:nowrap;display:block;letter-spacing:.5px`;
+        span.textContent = item.text;
+        bgWrap.appendChild(span);
+        content.appendChild(bgWrap);
+      } else {
+        const span = document.createElement('span');
+        span.style.cssText = `font-family:${item.font};font-size:${item.size}px;color:${item.color};font-weight:${item.bold?'bold':'normal'};font-style:${item.italic?'italic':'normal'};white-space:nowrap;pointer-events:none;display:block;letter-spacing:.5px`;
+        span.textContent = item.text;
+        content.appendChild(span);
+      }
     }
   } else {
     const img = document.createElement('img');
@@ -754,36 +978,11 @@ function createDragItem(item) {
     del.className = 'drag-delete';
     del.innerHTML = '✕';
     del.onclick = e => { e.stopPropagation(); deleteItem(item.id); };
+    del.addEventListener('mousedown', e => e.stopPropagation());
+    del.addEventListener('touchstart', e => e.stopPropagation());
     content.appendChild(del);
 
-    // Toolbar
-    const tb = document.createElement('div');
-    tb.className = 'item-toolbar';
-    const isText = item.type === 'text';
-
-    tb.innerHTML = `
-      <button class="tb-btn" onclick="resizeItem(${item.id},-1)">−</button>
-      <span class="tb-size">${item.size}px</span>
-      <button class="tb-btn" onclick="resizeItem(${item.id},1)">+</button>
-      ${isText ? `
-        <div class="tb-div"></div>
-        <label style="width:22px;height:22px;border-radius:50%;background:${item.color};border:2px solid rgba(255,255,255,.35);cursor:pointer;display:block;overflow:hidden;position:relative;flex-shrink:0">
-          <input type="color" value="${item.color}" style="opacity:0;position:absolute;inset:0;width:100%;height:100%;cursor:pointer;border:none;padding:0" onchange="recolorItem(${item.id},this.value)" oninput="recolorItem(${item.id},this.value)"/>
-        </label>
-        <div class="tb-div"></div>
-        <button class="tb-shape${item.curve===0?' active':''}" onclick="reshapeItem(${item.id},0)" title="None">
-          <svg width="22" height="14" viewBox="0 0 22 14"><text x="11" y="11" text-anchor="middle" font-size="9" font-family="Arial" font-weight="bold" fill="currentColor">ABC</text></svg>
-        </button>
-        <button class="tb-shape${item.curve>0?' active':''}" onclick="reshapeItem(${item.id},${Math.abs(item.curve)||50})" title="Arch Up">
-          <svg width="22" height="14" viewBox="0 0 22 14"><path d="M2 12 Q11 2 20 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><text x="11" y="10" text-anchor="middle" font-size="7" font-family="Arial" font-weight="bold" fill="currentColor">ABC</text></svg>
-        </button>
-        <button class="tb-shape${item.curve<0?' active':''}" onclick="reshapeItem(${item.id},${-(Math.abs(item.curve)||50)})" title="Arch Down">
-          <svg width="22" height="14" viewBox="0 0 22 14"><path d="M2 2 Q11 12 20 2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><text x="11" y="7" text-anchor="middle" font-size="7" font-family="Arial" font-weight="bold" fill="currentColor">ABC</text></svg>
-        </button>
-
-      ` : ''}
-    `;
-    el.appendChild(tb);
+    // Toolbar now lives in the sidebar — nothing to add here
   }
 
   el.appendChild(content);
@@ -796,30 +995,25 @@ function createDragItem(item) {
     drag = {ox: cx - r.left - item.x, oy: cy - r.top - item.y};
   };
   el.addEventListener('mousedown', e => { e.stopPropagation(); startDrag(e.clientX, e.clientY); });
+  el.addEventListener('click', e => e.stopPropagation());
   el.addEventListener('touchstart', e => { e.stopPropagation(); startDrag(e.touches[0].clientX, e.touches[0].clientY); });
 
-  window.addEventListener('mousemove', e => {
+  function moveItem(cx, cy) {
     if (!drag || state.selId !== item.id) return;
     const r = document.getElementById('canvas-items')?.getBoundingClientRect();
     if (!r) return;
-    const nx = e.clientX - r.left - drag.ox;
-    const ny = e.clientY - r.top - drag.oy;
-    item.x = Math.max(4, Math.min(r.width - (item.size||60) - 4, nx));
-    item.y = Math.max(4, Math.min(r.height - (item.size||20) - 4, ny));
-    el.style.left = item.x + 'px';
-    el.style.top = item.y + 'px';
-  });
-  window.addEventListener('touchmove', e => {
-    if (!drag || state.selId !== item.id) return;
-    const r = document.getElementById('canvas-items')?.getBoundingClientRect();
-    if (!r) return;
-    const nx = e.touches[0].clientX - r.left - drag.ox;
-    const ny = e.touches[0].clientY - r.top - drag.oy;
-    item.x = Math.max(4, Math.min(r.width - (item.size||60) - 4, nx));
-    item.y = Math.max(4, Math.min(r.height - (item.size||20) - 4, ny));
-    el.style.left = item.x + 'px';
-    el.style.top = item.y + 'px';
-  }, {passive:true});
+    // Always grab the live DOM node — el may be stale after renderCanvas()
+    const liveEl = document.querySelector(`.drag-item[data-id="${item.id}"]`) || el;
+    const elW = liveEl.offsetWidth || 60;
+    const elH = liveEl.offsetHeight || 20;
+    item.x = Math.max(0, Math.min(r.width - elW, cx - r.left - drag.ox));
+    item.y = Math.max(0, Math.min(r.height - elH, cy - r.top - drag.oy));
+    liveEl.style.left = item.x + 'px';
+    liveEl.style.top  = item.y + 'px';
+    if (liveEl._positionToolbar) liveEl._positionToolbar();
+  }
+  window.addEventListener('mousemove', e => moveItem(e.clientX, e.clientY));
+  window.addEventListener('touchmove', e => moveItem(e.touches[0].clientX, e.touches[0].clientY), {passive:true});
   window.addEventListener('mouseup', () => { drag = null; });
   window.addEventListener('touchend', () => { drag = null; });
 
@@ -827,8 +1021,16 @@ function createDragItem(item) {
 }
 
 function selectItem(id) {
+  if (state.selId === id) return;
   state.selId = id;
+  // Switch sidebar to text tab so controls are visible
+  const item = state.items.find(i => i.id === id);
+  if (item && (item.type === 'text' || item.type === 'logo')) {
+    state.tab = 'text';
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === 'text'));
+  }
   renderCanvas();
+  renderPanel();
 }
 
 function resizeItem(id, dir) {
@@ -865,7 +1067,7 @@ function updateHintText() {
   const hint = document.getElementById('hint-inner');
   if (hint) hint.textContent = window.innerWidth < 700
     ? 'Add text or a logo using the panel below'
-    : 'Add text or a logo using the panel on the left';
+    : 'Add text or a logo using the panel below';
 }
 window.addEventListener('resize', updateHintText);
 
@@ -873,6 +1075,7 @@ renderCap();
 renderPanel();
 updateHint();
 updateHintText();
+setTimeout(applyZoom, 100);
 </script>
 </body>
 </html>
