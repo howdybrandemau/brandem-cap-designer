@@ -20,20 +20,20 @@ input,select,textarea{font-family:inherit}
 #order-btn{background:#F74D24;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:700;color:#fff;border:none;margin-left:auto;font-family:'Black Han Sans',sans-serif;letter-spacing:1px;box-shadow:0 3px 10px rgba(247,77,36,.33)}
 #order-btn:hover{opacity:.9;transform:translateY(-1px)}
 /* BODY */
-#body{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+#body{flex:1;display:flex;flex-direction:row;overflow:hidden;min-height:0}
 /* SIDEBAR */
-#sidebar{width:100%;height:280px;flex-shrink:0;border-top:2px solid #C8A830;background:#FCD68A;display:flex;flex-direction:column;overflow:hidden;transition:height .05s linear;will-change:height}
+#sidebar{width:300px;flex-shrink:0;border-right:2px solid #C8A830;border-top:none;background:#FCD68A;display:flex;flex-direction:column;overflow:hidden}
 #tabs{display:flex;border-bottom:2px solid #C8A830;flex-shrink:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
 .tab-btn{flex:1;padding:8px 6px;border:none;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;line-height:1.4;background:transparent;color:#7A6030;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;min-width:56px}
 .tab-btn.active{background:rgba(255,255,255,0.5);color:#47360B;border-bottom:2px solid #47360B}
 .tab-btn .tab-icon{font-size:16px;display:block;margin-bottom:1px}
 #panel{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:6px}
 /* CANVAS */
-#canvas-area{flex:1;display:flex;flex-direction:column;background:#E8E6DC;overflow:hidden;min-height:0}
+#canvas-area{flex:1;display:flex;flex-direction:column;background:#E8E6DC;overflow:hidden;min-height:0;min-width:0}
 .dot-grid{position:fixed;inset:0;background-image:radial-gradient(circle,rgba(71,54,11,.08) 1px,transparent 1px);background-size:24px 24px;pointer-events:none;z-index:0}
-#zoom-scroller{flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:24px;min-height:0}
-#zoom-stage{display:flex;align-items:center;justify-content:center;width:100%;height:100%}
-#whiteboard{position:relative;background:#fff;border-radius:16px;box-shadow:0 8px 48px rgba(71,54,11,.18),0 2px 12px rgba(71,54,11,.10);overflow:visible;aspect-ratio:2/1;width:min(calc(100vw - 48px), calc((100vh - 340px) * 2));flex-shrink:0}
+#zoom-scroller{flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:flex-start;padding:24px;min-height:0;min-width:0}
+#zoom-stage{display:inline-flex;align-items:center;justify-content:center;transform-origin:top left}
+#whiteboard{position:relative;background:#fff;border-radius:16px;box-shadow:0 8px 48px rgba(71,54,11,.18),0 2px 12px rgba(71,54,11,.10);overflow:visible;aspect-ratio:2/1;width:min(calc(100vw - 348px), calc((100vh - 120px) * 2));flex-shrink:0}
 #cap-svg-wrap{position:absolute;inset:0}
 #cap-svg-wrap svg{width:100%;height:100%;display:block}
 #canvas-items{position:absolute;inset:0;overflow:visible}
@@ -119,8 +119,11 @@ input,select,textarea{font-family:inherit}
 .section-label{font-size:10px;color:#7A6030;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2px;margin-top:2px}
 /* INFO BOX */
 .info-box{background:#DEDAD0;border-radius:8px;padding:8px 10px;border:1px solid #D4CFC0;font-size:11px;color:#9A8A6A;line-height:1.6}
-@media(max-width:600px){
-  #sidebar{height:240px}
+@media(max-width:700px){
+  #body{flex-direction:column}
+  #sidebar{width:100%;height:220px;border-right:none;border-top:2px solid #C8A830;order:2}
+  #canvas-area{order:1;flex:1}
+  #whiteboard{width:min(calc(100vw - 32px), calc((55vh) * 2))}
 }
 </style>
 </head>
@@ -136,25 +139,7 @@ input,select,textarea{font-family:inherit}
     <button id="order-btn" onclick="switchTab('order')">PLACE ORDER</button>
   </div>
   <div id="body">
-    <div id="canvas-area">
-      <div class="dot-grid"></div>
-      <div id="zoom-scroller">
-      <div id="zoom-stage">
-      <div id="whiteboard">
-        <div id="cap-svg-wrap"></div>
-        <div id="canvas-items"></div>
-        <div id="hint"><div id="hint-inner">Add text or a logo using the panel below</div></div>
-      </div>
-      </div>
-      </div>
-      <div class="zoom-controls">
-        <button class="zoom-btn" onclick="changeZoom(-1)" title="Zoom out">−</button>
-        <span class="zoom-label" id="zoom-label">100%</span>
-        <button class="zoom-btn" onclick="changeZoom(1)" title="Zoom in">+</button>
-      </div>
-    </div>
     <div id="sidebar">
-      <div class="panel-drag-handle" id="panel-drag"><div class="panel-drag-pill"></div></div>
       <div id="tabs">
         <button class="tab-btn active" data-tab="colours" onclick="switchTab('colours')"><span class="tab-icon">🎨</span>Colours</button>
         <button class="tab-btn" data-tab="text" onclick="switchTab('text')"><span class="tab-icon">✏️</span>Text</button>
@@ -163,6 +148,23 @@ input,select,textarea{font-family:inherit}
         <button class="tab-btn" data-tab="order" onclick="switchTab('order')"><span class="tab-icon">📋</span>Order</button>
       </div>
       <div id="panel"></div>
+    </div>
+    <div id="canvas-area">
+      <div class="dot-grid"></div>
+      <div id="zoom-scroller">
+        <div id="zoom-stage">
+          <div id="whiteboard">
+            <div id="cap-svg-wrap"></div>
+            <div id="canvas-items"></div>
+            <div id="hint"><div id="hint-inner">Add text or a logo using the panel on the left</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="zoom-controls">
+        <button class="zoom-btn" onclick="changeZoom(-1)" title="Zoom out">−</button>
+        <span class="zoom-label" id="zoom-label">100%</span>
+        <button class="zoom-btn" onclick="changeZoom(1)" title="Zoom in">+</button>
+      </div>
     </div>
   </div>
 </div>
@@ -313,9 +315,19 @@ function changeZoom(dir) {
 
 function applyZoom() {
   const stage = document.getElementById('zoom-stage');
+  const scroller = document.getElementById('zoom-scroller');
   if (!stage) return;
   const z = state.zoom;
-  stage.style.transform = z === 1 ? '' : 'scale(' + z + ')';
+  stage.style.transform = 'scale(' + z + ')';
+  stage.style.transformOrigin = 'top left';
+  // Expand stage so scroller gets scrollbars when zoomed
+  const wb = document.getElementById('whiteboard');
+  if (wb && scroller) {
+    const natW = wb.offsetWidth;
+    const natH = wb.offsetHeight;
+    stage.style.width  = (natW * z + 48) + 'px';
+    stage.style.height = (natH * z + 48) + 'px';
+  }
   const zl = document.getElementById('zoom-label'); if (zl) zl.textContent = Math.round(z*100) + '%';
 }
 
@@ -1250,8 +1262,8 @@ document.getElementById('canvas-items').addEventListener('click', () => {
 function updateHintText() {
   const hint = document.getElementById('hint-inner');
   if (hint) hint.innerHTML = window.innerWidth < 700
-    ? 'Add text or a logo using the panel below'
-    : 'Add text or a logo using the panel below';
+    ? 'Add text or a logo using the panel on the left'
+    : 'Add text or a logo using the panel on the left';
 }
 window.addEventListener('resize', updateHintText);
 
