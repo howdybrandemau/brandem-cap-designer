@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Brandem Cap Designer</title>
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans','Segoe UI',system-ui,sans-serif;background:#F4F3EC;color:#47360B;height:100dvh;overflow:hidden;display:flex;flex-direction:column;margin:0}
@@ -13,7 +13,7 @@ button{cursor:pointer;font-family:inherit;transition:all .15s}
 input,select,textarea{font-family:inherit}
 #app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
 /* HEADER */
-#header{background:#F4F3EC;border-bottom:1.5px solid #D4CFC0;padding:8px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0;box-shadow:0 1px 12px rgba(71,54,11,.08);z-index:50}
+#header{background:#FCD68A;border-bottom:1.5px solid #C8A830;padding:8px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0;box-shadow:0 1px 12px rgba(71,54,11,.08);z-index:50}
 #logo-img{width:44px;height:44px;object-fit:contain}
 .hdr-site{font-family:'Black Han Sans',sans-serif;font-size:16px;color:#47360B;letter-spacing:.5px;line-height:1;text-transform:uppercase}
 .hdr-sub{font-family:'Black Han Sans',sans-serif;font-size:11px;color:#9A8A6A;letter-spacing:1px;line-height:1.5;text-transform:uppercase}
@@ -22,18 +22,18 @@ input,select,textarea{font-family:inherit}
 /* BODY */
 #body{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
 /* SIDEBAR */
-#sidebar{width:100%;flex-shrink:0;border-top:1.5px solid #D4CFC0;border-right:none;background:#EAE9E1;display:flex;flex-direction:column;overflow:hidden;max-height:42vh}
-#tabs{display:flex;border-bottom:1.5px solid #D4CFC0;flex-shrink:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
-.tab-btn{flex:1;padding:8px 6px;border:none;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;line-height:1.4;background:transparent;color:#9A8A6A;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;min-width:56px}
-.tab-btn.active{background:#fff;color:#C08B3D;border-bottom:2px solid #C08B3D}
+#sidebar{width:100%;height:280px;flex-shrink:0;border-top:2px solid #C8A830;background:#FCD68A;display:flex;flex-direction:column;overflow:hidden;transition:height .05s linear;will-change:height}
+#tabs{display:flex;border-bottom:2px solid #C8A830;flex-shrink:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.tab-btn{flex:1;padding:8px 6px;border:none;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;line-height:1.4;background:transparent;color:#7A6030;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;min-width:56px}
+.tab-btn.active{background:rgba(255,255,255,0.5);color:#47360B;border-bottom:2px solid #47360B}
 .tab-btn .tab-icon{font-size:16px;display:block;margin-bottom:1px}
-#panel{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+#panel{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:6px}
 /* CANVAS */
-#canvas-area{flex:1;display:flex;flex-direction:column;background:#E8E6DC;overflow:hidden;min-height:0;position:relative}
+#canvas-area{flex:1;display:flex;flex-direction:column;background:#E8E6DC;overflow:hidden;min-height:0}
 .dot-grid{position:fixed;inset:0;background-image:radial-gradient(circle,rgba(71,54,11,.08) 1px,transparent 1px);background-size:24px 24px;pointer-events:none;z-index:0}
-#zoom-scroller{flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:20px}
-#zoom-stage{display:flex;align-items:center;justify-content:center;width:100%}
-#whiteboard{position:relative;background:#fff;border-radius:16px;box-shadow:0 8px 48px rgba(71,54,11,.18),0 2px 12px rgba(71,54,11,.10);overflow:visible;aspect-ratio:2/1;width:min(calc(100vw - 32px),min(1200px,calc((58dvh) * 2)));flex-shrink:0}
+#zoom-scroller{flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:24px;min-height:0}
+#zoom-stage{display:flex;align-items:center;justify-content:center;width:100%;height:100%}
+#whiteboard{position:relative;background:#fff;border-radius:16px;box-shadow:0 8px 48px rgba(71,54,11,.18),0 2px 12px rgba(71,54,11,.10);overflow:visible;aspect-ratio:2/1;width:min(calc(100vw - 48px), calc((100vh - 340px) * 2));flex-shrink:0}
 #cap-svg-wrap{position:absolute;inset:0}
 #cap-svg-wrap svg{width:100%;height:100%;display:block}
 #canvas-items{position:absolute;inset:0;overflow:visible}
@@ -52,15 +52,15 @@ input,select,textarea{font-family:inherit}
 .colour-swatch:hover{transform:scale(1.18)}
 .colour-swatch.selected{outline:3px solid #F74D24}
 /* PART ROWS */
-.part-row{display:flex;align-items:center;gap:10px;background:#fff;border-radius:10px;padding:8px 10px;cursor:pointer;border:1.5px solid #D4CFC0;transition:all .15s}
-.part-row:hover{border-color:#C08B3D;box-shadow:0 0 0 3px rgba(192,139,61,.1)}
+.part-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.7);border-radius:10px;padding:8px 10px;cursor:pointer;border:1.5px solid rgba(0,0,0,.1);transition:all .15s}
+.part-row:hover{border-color:#47360B;background:rgba(255,255,255,0.9)}
 .part-swatch{width:36px;height:36px;border-radius:9px;flex-shrink:0;border:1.5px solid #D4CFC0;box-shadow:0 2px 6px rgba(0,0,0,.12)}
 .part-label{font-weight:700;font-size:12px;color:#47360B}
 .part-color-name{color:#9A8A6A;font-size:10px;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .part-arrow{font-size:11px;color:#C08B3D;font-weight:700;flex-shrink:0;margin-left:auto}
 /* FORM ELEMENTS */
-.field-label{font-size:10px;color:#9A8A6A;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
-.text-input{background:#fff;border:1.5px solid #D4CFC0;border-radius:8px;padding:9px 10px;color:#47360B;font-size:14px;outline:none;width:100%}
+.field-label{font-size:10px;color:#7A6030;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.text-input{background:rgba(255,255,255,0.8);border:1.5px solid rgba(0,0,0,.15);border-radius:8px;padding:9px 10px;color:#47360B;font-size:14px;outline:none;width:100%}
 .text-input:focus{border-color:#C08B3D}
 .btn-primary{padding:10px;background:#F74D24;border:none;border-radius:8px;color:#fff;font-weight:700;font-size:13px;width:100%;box-shadow:0 3px 10px rgba(247,77,36,.33)}
 .btn-primary:hover{opacity:.9}
@@ -106,6 +106,9 @@ input,select,textarea{font-family:inherit}
 .underbrim-drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .underbrim-preview{width:100%;border-radius:10px;margin-top:10px;border:1.5px solid #D4CFC0;max-height:100px;object-fit:cover}
 /* ZOOM CONTROLS */
+.panel-drag-handle{width:100%;display:flex;justify-content:center;align-items:center;padding:5px 0 3px;cursor:ns-resize;flex-shrink:0;background:#FCD68A;user-select:none;touch-action:none}
+.panel-drag-pill{width:36px;height:4px;background:rgba(71,54,11,.3);border-radius:2px;transition:background .15s}
+.panel-drag-handle:hover .panel-drag-pill{background:rgba(71,54,11,.6)}
 .zoom-controls{position:fixed;bottom:16px;right:16px;display:flex;align-items:center;gap:6px;background:rgba(244,243,236,.95);border-radius:10px;padding:5px 10px;border:1.5px solid #D4CFC0;box-shadow:0 2px 12px rgba(71,54,11,.18);z-index:200}
 .zoom-btn{background:#EAE9E1;border:1.5px solid #D4CFC0;border-radius:6px;color:#47360B;font-size:16px;font-weight:700;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
 .zoom-btn:hover{background:#D4CFC0}
@@ -113,12 +116,11 @@ input,select,textarea{font-family:inherit}
 /* SUCCESS */
 .success-box{text-align:center;padding:32px 8px}
 /* SECTION LABEL */
-.section-label{font-size:10px;color:#9A8A6A;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2px;margin-top:2px}
+.section-label{font-size:10px;color:#7A6030;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2px;margin-top:2px}
 /* INFO BOX */
 .info-box{background:#DEDAD0;border-radius:8px;padding:8px 10px;border:1px solid #D4CFC0;font-size:11px;color:#9A8A6A;line-height:1.6}
 @media(max-width:600px){
-  #sidebar{max-height:48vh}
-  #whiteboard{width:min(calc(100% - 16px), calc((52vh) * 2));border-radius:10px}
+  #sidebar{height:240px}
 }
 </style>
 </head>
@@ -130,6 +132,7 @@ input,select,textarea{font-family:inherit}
       <div class="hdr-site">BRANDEMAU.COM</div>
       <div class="hdr-sub">Cap Designer</div>
     </div>
+    <div id="hdr-total" style="margin-left:auto;display:flex;align-items:center;gap:10px"></div>
     <button id="order-btn" onclick="switchTab('order')">PLACE ORDER</button>
   </div>
   <div id="body">
@@ -151,6 +154,7 @@ input,select,textarea{font-family:inherit}
       </div>
     </div>
     <div id="sidebar">
+      <div class="panel-drag-handle" id="panel-drag"><div class="panel-drag-pill"></div></div>
       <div id="tabs">
         <button class="tab-btn active" data-tab="colours" onclick="switchTab('colours')"><span class="tab-icon">🎨</span>Colours</button>
         <button class="tab-btn" data-tab="text" onclick="switchTab('text')"><span class="tab-icon">✏️</span>Text</button>
@@ -269,6 +273,7 @@ const state = {
   tBg: 'none',
   form: {name:'',email:'',phone:'',qty:'',notes:'',sideTags:0,wantUnderbrim:false},
   sent: false,
+  sending: false,
   nextId: 1,
   zoom: 1,
   underbrimPhoto: null,
@@ -311,7 +316,7 @@ function applyZoom() {
   if (!stage) return;
   const z = state.zoom;
   stage.style.transform = z === 1 ? '' : 'scale(' + z + ')';
-  document.getElementById('zoom-label').textContent = Math.round(z*100) + '%';
+  const zl = document.getElementById('zoom-label'); if (zl) zl.textContent = Math.round(z*100) + '%';
 }
 
 function colourName(hex) {
@@ -325,7 +330,7 @@ let pickerPartId = null;
 function openPicker(partId) {
   pickerPartId = partId;
   const part = CAP_PARTS.find(p => p.id === partId);
-  document.getElementById('picker-title').textContent = part.label;
+  const pt = document.getElementById('picker-title'); if(pt) pt.textContent = part.label;
   document.getElementById('picker-swatch').style.background = state.colours[partId];
   document.getElementById('picker-search').value = '';
   document.getElementById('picker-modal').style.display = 'flex';
@@ -346,7 +351,7 @@ function renderPickerGrid() {
       style="background:${c.hex};${c.hex==='#ffffff'?'box-shadow:inset 0 0 0 1px #ccc':''}"
       title="${c.name}" onclick="pickColour('${c.hex}')"></button>
   `).join('');
-  document.getElementById('picker-count').textContent = list.length + ' colours';
+  const pc = document.getElementById('picker-count'); if(pc) pc.textContent = list.length + ' colours';
 }
 
 function pickColour(hex) {
@@ -367,7 +372,29 @@ function switchTab(tab) {
 }
 
 // ── PANEL ─────────────────────────────────────────────────────────────────────
+function updateHeaderTotal() {
+  const el = document.getElementById('hdr-total');
+  if (!el) return;
+  const qty = parseInt(state.form.qty) || 0;
+  const TIERS = [
+    {min:25,max:49,price:30},{min:50,max:99,price:22},
+    {min:100,max:199,price:18},{min:200,max:499,price:16},{min:500,max:Infinity,price:14}
+  ];
+  const tier = TIERS.find(t => qty >= t.min && qty <= t.max);
+  if (!tier || qty < 25 || qty % 25 !== 0) { el.innerHTML = ''; return; }
+  const sideTags = Math.min(5, parseInt(state.form.sideTags) || 0);
+  const wantUnderbrim = !!state.form.wantUnderbrim;
+  const textCount = state.items.filter(i=>i.type==='text').length;
+  const extra = sideTags * 0.5 + (wantUnderbrim ? 1 : 0) + textCount * 0.5;
+  const total = (tier.price + extra) * qty;
+  el.innerHTML = `<div style="text-align:center;line-height:1.3">
+    <div style="font-size:10px;color:#7A6030;font-weight:600;letter-spacing:.5px">${qty} HATS · $${tier.price}/HAT${extra>0?' + EXTRAS':''}</div>
+    <div style="font-size:18px;font-weight:800;color:#47360B;font-family:'Black Han Sans',sans-serif">$${total.toFixed(2)}</div>
+  </div>`;
+}
+
 function renderPanel() {
+  updateHeaderTotal();
   const panel = document.getElementById('panel');
   if (state.tab === 'colours') panel.innerHTML = renderColoursPanel();
   else if (state.tab === 'text') panel.innerHTML = renderTextPanel();
@@ -424,34 +451,34 @@ function renderTextPanel() {
           <select class="text-input" style="padding:7px 8px;font-size:12px" onchange="state.items.find(i=>i.id===${sel.id}).font=this.value;renderCanvas()">${fontOpts}</select>
         </div>
         <div>
-          <div class="field-label">Size: ${sel.size}px</div>
+          <div class="field-label" id="txt-size-lbl-${sel.id}">Size: ${sel.size}px</div>
           <input type="range" min="10" max="60" value="${sel.size}" style="width:100%;accent-color:#C08B3D"
-            oninput="state.items.find(i=>i.id===${sel.id}).size=+this.value;renderCanvas();this.previousElementSibling.textContent='Size: '+this.value+'px'"/>
+            oninput="state.items.find(i=>i.id===${sel.id}).size=+this.value;renderCanvas();var l=document.getElementById('txt-size-lbl-${sel.id}');if(l)l.textContent='Size: '+this.value+'px';"/>
         </div>
-        <div style="display:flex;align-items:center;gap:8px">
+        <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap">
           <div>
-            <div class="field-label">Text</div>
-            <input type="color" value="${sel.color}" style="width:40px;height:32px;border-radius:8px;border:1.5px solid #D4CFC0;background:none;cursor:pointer;padding:2px"
+            <div class="field-label">Text Colour</div>
+            <input type="color" value="${sel.color}" style="width:44px;height:36px;border-radius:8px;border:1.5px solid #D4CFC0;background:none;cursor:pointer;padding:2px"
               oninput="recolorItem(${sel.id},this.value)"/>
           </div>
           <div>
-            <div class="field-label">Background</div>
-            <div style="display:flex;align-items:center;gap:4px">
-              <input type="color" value="${sel.textBg && sel.textBg!=='none' ? sel.textBg : '#ffffff'}" style="width:40px;height:32px;border-radius:8px;border:1.5px solid #D4CFC0;background:none;cursor:pointer;padding:2px;${!sel.textBg||sel.textBg==='none'?'opacity:.4':''}" id="sel-bg-color"
+            <div class="field-label">Text Background</div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <input type="color" value="${sel.textBg && sel.textBg!=='none' ? sel.textBg : '#ffffff'}" style="width:44px;height:36px;border-radius:8px;border:1.5px solid #D4CFC0;background:none;cursor:pointer;padding:2px;${!sel.textBg||sel.textBg==='none'?'opacity:.35':''}" id="sel-bg-color"
                 oninput="state.items.find(i=>i.id===${sel.id}).textBg=this.value;renderCanvas()"/>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:#47360B;font-weight:600">
+                <input type="checkbox" ${sel.textBg&&sel.textBg!=='none'?'checked':''} style="width:15px;height:15px;accent-color:#47360B;cursor:pointer"
+                  onchange="state.items.find(i=>i.id===${sel.id}).textBg=this.checked?(document.getElementById('sel-bg-color')?.value||'#ffffff'):'none';renderCanvas();renderPanel()"/>
+                On
+              </label>
             </div>
           </div>
-          <div style="margin-top:18px;display:flex;flex-direction:column;align-items:center;gap:3px">
-            <label style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer" title="${sel.textBg&&sel.textBg!=='none'?'Remove background':'No background'}">
-              <input type="checkbox" ${sel.textBg&&sel.textBg!=='none'?'checked':''} style="width:16px;height:16px;accent-color:#C08B3D;cursor:pointer"
-                onchange="state.items.find(i=>i.id===${sel.id}).textBg=this.checked?(document.getElementById('sel-bg-color')?.value||'#ffffff'):'none';renderCanvas();renderPanel()"/>
-            </label>
-            <span style="font-size:8px;color:#9A8A6A">On</span>
+          <div style="display:flex;gap:4px;padding-bottom:2px">
+            <button class="btn-secondary${sel.bold?' active':''}" style="font-weight:bold;font-size:11px;padding:6px 10px"
+              onclick="state.items.find(i=>i.id===${sel.id}).bold=!state.items.find(i=>i.id===${sel.id}).bold;renderCanvas();renderPanel()">B</button>
+            <button class="btn-secondary${sel.italic?' active':''}" style="font-style:italic;font-size:11px;padding:6px 10px"
+              onclick="state.items.find(i=>i.id===${sel.id}).italic=!state.items.find(i=>i.id===${sel.id}).italic;renderCanvas();renderPanel()">I</button>
           </div>
-          <button class="btn-secondary${sel.bold?' active':''}" style="margin-top:18px;font-weight:bold;font-size:11px;padding:5px 8px"
-            onclick="state.items.find(i=>i.id===${sel.id}).bold=!state.items.find(i=>i.id===${sel.id}).bold;renderCanvas();renderPanel()">B</button>
-          <button class="btn-secondary${sel.italic?' active':''}" style="margin-top:18px;font-style:italic;font-size:11px;padding:5px 8px"
-            onclick="state.items.find(i=>i.id===${sel.id}).italic=!state.items.find(i=>i.id===${sel.id}).italic;renderCanvas();renderPanel()">I</button>
         </div>
         <div>
           <div class="field-label">Shape</div>
@@ -483,26 +510,27 @@ function renderTextPanel() {
       <div class="field-label">Size: ${state.tSize}px</div>
       <input type="range" id="size-slider" min="10" max="60" value="${state.tSize}" style="width:100%;accent-color:#C08B3D"/>
     </div>
-    <div style="display:flex;align-items:center;gap:8px">
+    <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap">
       <div>
-        <div class="field-label">Colour</div>
-        <input type="color" id="text-color" value="${state.tColor}" style="width:40px;height:32px;border-radius:8px;border:1.5px solid #D4CFC0;background:none;cursor:pointer;padding:2px"/>
+        <div class="field-label">Text Colour</div>
+        <input type="color" id="text-color" value="${state.tColor}" style="width:44px;height:36px;border-radius:8px;border:1.5px solid #D4CFC0;background:none;cursor:pointer;padding:2px"/>
       </div>
-      <button id="bold-btn" class="btn-secondary${state.bold?' active':''}" style="margin-top:18px;font-weight:bold;font-size:11px;padding:5px 8px" onclick="state.bold=!state.bold;renderPanel()">B</button>
-      <button id="italic-btn" class="btn-secondary${state.italic?' active':''}" style="margin-top:18px;font-style:italic;font-size:11px;padding:5px 8px" onclick="state.italic=!state.italic;renderPanel()">I</button>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px">
       <div>
-        <div class="field-label">Background</div>
-        <input type="color" id="new-text-bg" value="${state.tBg && state.tBg!=='none' ? state.tBg : '#ffffff'}" style="width:40px;height:32px;border-radius:8px;border:1.5px solid #D4CFC0;background:none;cursor:pointer;padding:2px;${!state.tBg||state.tBg==='none'?'opacity:.4':''}"
-          oninput="state.tBg=this.value"/>
+        <div class="field-label">Text Background</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input type="color" id="new-text-bg" value="${state.tBg && state.tBg!=='none' ? state.tBg : '#ffffff'}" style="width:44px;height:36px;border-radius:8px;border:1.5px solid #D4CFC0;background:none;cursor:pointer;padding:2px;${!state.tBg||state.tBg==='none'?'opacity:.35':''}"
+            oninput="state.tBg=this.value"/>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:#47360B;font-weight:600">
+            <input type="checkbox" ${state.tBg&&state.tBg!=='none'?'checked':''} style="width:15px;height:15px;accent-color:#47360B;cursor:pointer"
+              onchange="state.tBg=this.checked?(document.getElementById('new-text-bg')?.value||'#ffffff'):'none';renderPanel()"/>
+            On
+          </label>
+        </div>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;margin-top:18px">
-        <input type="checkbox" ${state.tBg&&state.tBg!=='none'?'checked':''} style="width:16px;height:16px;accent-color:#C08B3D;cursor:pointer"
-          onchange="state.tBg=this.checked?(document.getElementById('new-text-bg')?.value||'#ffffff'):'none';renderPanel()"/>
-        <span style="font-size:8px;color:#9A8A6A">On</span>
+      <div style="display:flex;gap:4px;padding-bottom:2px">
+        <button id="bold-btn" class="btn-secondary${state.bold?' active':''}" style="font-weight:bold;font-size:11px;padding:6px 10px" onclick="state.bold=!state.bold;renderPanel()">B</button>
+        <button id="italic-btn" class="btn-secondary${state.italic?' active':''}" style="font-style:italic;font-size:11px;padding:6px 10px" onclick="state.italic=!state.italic;renderPanel()">I</button>
       </div>
-      <div style="font-size:10px;color:#9A8A6A;margin-top:18px;line-height:1.4">25px radius<br>25px padding</div>
     </div>
     <button class="btn-primary" onclick="addText()">✚ Add Text to Cap</button>
     ${textItems ? `<div class="section-label" style="margin-top:4px">On Cap — tap to edit</div>${textItems}` : ''}
@@ -511,22 +539,48 @@ function renderTextPanel() {
 
 function renderLogoPanel() {
   const logos = state.items.filter(i=>i.type==='logo');
+  const sel = state.selId ? state.items.find(i => i.id === state.selId && i.type === 'logo') : null;
+
+  const selectedEditor = sel ? `
+    <div style="background:rgba(255,255,255,0.6);border:2px solid #47360B;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:10px;font-weight:700;color:#47360B;letter-spacing:1px;text-transform:uppercase">🖼️ Editing logo</div>
+        <button onclick="state.selId=null;renderCanvas();renderPanel()" style="background:none;border:none;color:#9A8A6A;font-size:16px;cursor:pointer;padding:0;line-height:1">✕</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <img src="${sel.src}" style="width:60px;height:48px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,0.5);padding:3px;border:1px solid rgba(0,0,0,.1)"/>
+        <div style="flex:1">
+          <div class="field-label" id="logo-size-lbl-${sel.id}">Size: ${sel.size}px</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button onclick="resizeItem(${sel.id},-1)" style="width:32px;height:32px;border-radius:8px;border:1.5px solid rgba(0,0,0,.15);background:rgba(255,255,255,0.7);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#47360B;font-weight:700">−</button>
+            <input type="range" min="20" max="300" value="${sel.size}" style="flex:1;accent-color:#47360B"
+              oninput="state.items.find(i=>i.id===${sel.id}).size=+this.value;renderCanvas();var l=document.getElementById('logo-size-lbl-${sel.id}');if(l)l.textContent='Size: '+this.value+'px';"/>
+            <button onclick="resizeItem(${sel.id},1)" style="width:32px;height:32px;border-radius:8px;border:1.5px solid rgba(0,0,0,.15);background:rgba(255,255,255,0.7);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#47360B;font-weight:700">+</button>
+          </div>
+        </div>
+      </div>
+      <button onclick="deleteItem(${sel.id})" style="background:rgba(255,255,255,0.7);border:1.5px solid #F74D24;border-radius:8px;color:#F74D24;font-size:12px;font-weight:700;padding:7px;cursor:pointer;width:100%">🗑 Delete logo</button>
+    </div>
+    <div style="border-top:1px solid rgba(0,0,0,.1);margin:2px 0"></div>
+  ` : '';
+
   const thumbs = logos.map(l => `
-    <div style="position:relative">
-      <img src="${l.src}" style="width:64px;height:50px;object-fit:contain;border-radius:8px;background:#EAE9E1;padding:3px;border:1px solid #D4CFC0;display:block"/>
-      <button onclick="deleteItem(${l.id})" style="position:absolute;top:-5px;right:-5px;background:#F74D24;border:none;color:#fff;border-radius:50%;width:18px;height:18px;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:bold">✕</button>
+    <div onclick="selectItem(${l.id})" style="position:relative;cursor:pointer;border-radius:8px;padding:2px;border:2px solid ${state.selId===l.id?'#47360B':'transparent'}">
+      <img src="${l.src}" style="width:60px;height:48px;object-fit:contain;border-radius:6px;background:rgba(255,255,255,0.6);padding:3px;display:block"/>
+      <button onclick="event.stopPropagation();deleteItem(${l.id})" style="position:absolute;top:-5px;right:-5px;background:#F74D24;border:none;color:#fff;border-radius:50%;width:18px;height:18px;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:bold">✕</button>
     </div>
   `).join('');
 
   return `
+    ${selectedEditor}
     <div class="upload-zone" onclick="document.getElementById('logo-file').click()">
-      <div style="font-size:36px;margin-bottom:6px">🖼️</div>
-      <div style="font-weight:700;font-size:13px;color:#47360B;margin-bottom:3px">Upload Logo</div>
-      <div style="color:#9A8A6A;font-size:11px">PNG · SVG · JPG</div>
+      <div style="font-size:28px;margin-bottom:4px">🖼️</div>
+      <div style="font-weight:700;font-size:13px;color:#47360B;margin-bottom:2px">Upload Logo</div>
+      <div style="color:#7A6030;font-size:11px">PNG · SVG · JPG</div>
     </div>
     <input id="logo-file" type="file" accept=".png,.svg,.jpg,.jpeg" style="display:none" onchange="handleLogo(this)"/>
     ${logos.length ? `
-      <div class="info-box">💡 Drag to position · Tap to select · Use +/− to resize</div>
+      <div style="font-size:10px;color:#7A6030;font-weight:600">Tap a logo to resize · Drag to position</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">${thumbs}</div>
     ` : ''}
   `;
@@ -576,6 +630,7 @@ function handleUnderbrimFile(file) {
   const reader = new FileReader();
   reader.onload = e => {
     state.underbrimPhoto = e.target.result;
+    state.form.wantUnderbrim = true;
     renderCap();
     renderPanel();
   };
@@ -591,6 +646,7 @@ function handleUnderbrimDrop(e) {
 
 function removeUnderbrimPhoto() {
   state.underbrimPhoto = null;
+  state.form.wantUnderbrim = false;
   renderCap();
   renderPanel();
 }
@@ -627,19 +683,15 @@ function renderOrderPanel() {
   ];
   const activeTier = TIERS.find(t => qty >= t.min && qty <= t.max);
   const underbrimCost = wantUnderbrim ? 1.00 : 0;
+  const textCount     = state.items.filter(i=>i.type==='text').length;
+  const textCost      = textCount * 0.50;
   const sideTagCost   = sideTags * 0.50;
-  const extraPerHat   = underbrimCost + sideTagCost;
+  const extraPerHat   = underbrimCost + sideTagCost + textCost;
   const basePerHat    = activeTier ? activeTier.price : null;
   const totalPerHat   = basePerHat !== null ? basePerHat + extraPerHat : null;
   const totalOrder    = totalPerHat !== null && qty >= 25 ? totalPerHat * qty : null;
 
-  const tierRows = TIERS.map(t => {
-    const active = activeTier && activeTier.min === t.min;
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-radius:7px;background:${active?'#C08B3D':'transparent'}">
-      <span style="font-size:11px;color:${active?'#fff':'#47360B'};font-weight:${active?'700':'400'}">${t.label}</span>
-      <span style="font-size:11px;font-weight:700;color:${active?'#fff':'#47360B'}">$${t.price.toFixed(2)}/hat</span>
-    </div>`;
-  }).join('');
+  // tierRows removed — price shown in header
 
   // Stepper buttons for side tags
   const tagStepper = `
@@ -657,11 +709,11 @@ function renderOrderPanel() {
     <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">
       <div>
         <div style="font-size:12px;font-weight:600;color:#47360B">Under-brim photo print</div>
-        <div style="font-size:10px;color:#9A8A6A">+$1.00 per hat · GST incl · free shipping</div>
+        <div style="font-size:10px;color:#9A8A6A">Photo printed inside the brim</div>
       </div>
       <label style="position:relative;display:inline-block;width:40px;height:22px;cursor:pointer;flex-shrink:0">
         <input type="checkbox" ${wantUnderbrim?'checked':''} style="opacity:0;width:0;height:0"
-          onchange="state.form.wantUnderbrim=this.checked;renderPanel()"/>
+          onchange="state.form.wantUnderbrim=this.checked;if(!this.checked){state.underbrimPhoto=null;renderCap();}renderPanel()"/>
         <span style="position:absolute;inset:0;background:${wantUnderbrim?'#C08B3D':'#D4CFC0'};border-radius:11px;transition:.2s">
           <span style="position:absolute;top:2px;left:${wantUnderbrim?'20px':'2px'};width:18px;height:18px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span>
         </span>
@@ -693,17 +745,45 @@ function renderOrderPanel() {
 
   const canSubmit = state.form.name && state.form.email;
 
+  // Qty preset buttons 25,50,75...500
+  const qtyNum = parseInt(state.form.qty) || 0;
+  const qtyValid = qtyNum >= 25 && qtyNum % 25 === 0;
+  const qtyWarn = qtyNum > 0 && (!qtyValid);
+  const qtyWarnMsg = qtyNum > 0 && qtyNum < 25
+    ? '⚠️ Minimum order is 25 hats'
+    : qtyNum % 25 !== 0 && qtyNum > 0
+    ? `⚠️ Orders are in multiples of 25 — try ${Math.round(qtyNum/25)*25}`
+    : '';
+
   return `
-    <div style="background:#FFF8EE;border:1.5px solid #FCD68A;border-radius:12px;padding:10px 10px 8px">
-      <div style="font-size:10px;font-weight:700;color:#C08B3D;margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase">💰 Pricing · GST incl · Free shipping</div>
-      ${tierRows}
+    <div>
+      <div class="field-label" style="margin-bottom:6px">How many hats?</div>
+      <input type="number" min="25" step="25" placeholder="e.g. 50, 100, 200…"
+        value="${escHtml(state.form.qty)}"
+        class="text-input"
+        style="font-size:18px;font-weight:700;text-align:center;${qtyValid?'border-color:#47360B;':''}${qtyWarn?'border-color:#F74D24;':''}"
+        oninput="state.form.qty=this.value;renderPanel()"/>
+      ${qtyWarnMsg ? `<div style="font-size:11px;color:#F74D24;font-weight:600;margin-top:4px;text-align:center">${qtyWarnMsg}</div>` : ''}
+      <div style="font-size:10px;color:#7A6030;margin-top:4px;text-align:center">Orders in multiples of 25 · Minimum 25</div>
     </div>
 
-    <div>
-      <div class="field-label">Quantity (min. 25)</div>
-      <input type="number" min="25" placeholder="e.g. 50" value="${escHtml(state.form.qty)}"
-        class="text-input" oninput="state.form.qty=this.value;renderPanel()"/>
+    ${qtyValid && activeTier ? `
+    <div style="background:#47360B;border-radius:12px;padding:12px 16px">
+      <div style="font-size:10px;color:rgba(255,255,255,.6);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;text-align:center">Your Order · GST incl · 🚚 Free shipping</div>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px">
+        ${[
+          [qty + ' hats', '$' + (activeTier.price*qty).toFixed(2)],
+          textCount > 0 ? [textCount + ' text embroidery × $0.50/hat', '+$'+(textCost*qty).toFixed(2)] : null,
+          sideTags > 0 ? [sideTags + ' side tag'+(sideTags>1?'s':'')+' × $0.50/hat', '+$'+(sideTagCost*qty).toFixed(2)] : null,
+          wantUnderbrim ? ['Underbrim photo × $1.00/hat', '+$'+qty.toFixed(2)] : null
+        ].filter(Boolean).map(([l,r]) => `<div style="display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,.8)"><span>${l}</span><span>${r}</span></div>`).join('')}
+      </div>
+      <div style="border-top:1px solid rgba(255,255,255,.2);padding-top:8px;display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-size:12px;font-weight:600;color:rgba(255,255,255,.7)">Total</span>
+        <span style="font-size:24px;font-weight:800;color:#FCD68A;font-family:'Black Han Sans',sans-serif">$${totalOrder.toFixed(2)}</span>
+      </div>
     </div>
+    ` : ''}
 
     <div style="background:#fff;border-radius:10px;padding:10px 12px;border:1.5px solid #D4CFC0">
       <div style="font-size:10px;font-weight:700;color:#9A8A6A;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">Extras</div>
@@ -717,7 +797,7 @@ function renderOrderPanel() {
       </div>
     </div>
 
-    ${estimateBlock}
+
 
     <div class="section-label" style="margin-top:2px">Design Summary</div>
     <div style="background:#fff;border-radius:10px;padding:8px 10px;border:1.5px solid #D4CFC0">${summary}</div>
@@ -741,7 +821,7 @@ function renderOrderPanel() {
         class="text-input" style="resize:vertical"
         oninput="state.form.notes=this.value">${escHtml(state.form.notes)}</textarea>
     </div>
-    <button class="btn-primary" ${canSubmit?'':'disabled'} onclick="submitOrder()">🚀 Submit My Design</button>
+    <button class="btn-primary" ${canSubmit&&!state.sending?'':'disabled'} onclick="submitOrder()">${state.sending?'⏳ Sending…':'🚀 Submit My Design'}</button>
     <div style="font-size:10px;color:#9A8A6A;text-align:center">We reply within 24 hours · 🚚 Free shipping Australia-wide</div>
   `;
 }
@@ -788,9 +868,15 @@ function addText() {
     x: 60, y
   });
   state.newText = '';
+  state.selId = null; // clear selection so editor doesn't block the add form
   renderCanvas();
   renderPanel();
   updateHint();
+  // re-focus the input so user can keep typing
+  setTimeout(() => {
+    const inp = document.getElementById('new-text-input');
+    if (inp) inp.focus();
+  }, 50);
 }
 
 function handleLogo(input) {
@@ -814,12 +900,78 @@ function deleteItem(id) {
   updateHint();
 }
 
-function downloadDesignSVG() {
-  // Grab the current SVG from the cap preview
-  const svgEl = document.querySelector('#cap-svg-wrap svg');
-  if (!svgEl) return null;
-  const svgData = new XMLSerializer().serializeToString(svgEl);
-  const blob = new Blob([svgData], {type:'image/svg+xml'});
+function getCompositeSVGString() {
+  // ── 1. Get the cap SVG ────────────────────────────────────────────────────
+  const capSvg = document.querySelector('#cap-svg-wrap svg');
+  if (!capSvg) return null;
+
+  // viewBox is "10 50 260 130"
+  const VX = 10, VY = 50, VW = 260, VH = 130;
+
+  // ── 2. Get the whiteboard pixel dimensions ────────────────────────────────
+  const wb = document.getElementById('whiteboard');
+  if (!wb) return null;
+  const wbW = wb.offsetWidth  || 520;
+  const wbH = wb.offsetHeight || 260;
+
+  // ── 3. Scale factor: pixels → SVG units ──────────────────────────────────
+  const scaleX = VW / wbW;
+  const scaleY = VH / wbH;
+
+  // ── 4. Build text/logo SVG elements ──────────────────────────────────────
+  const zoom = state.zoom || 1;
+  let overlayNodes = '';
+  state.items.forEach(item => {
+    // item.x/y are pixel positions within the whiteboard at zoom=1
+    const sx = VX + item.x * scaleX;
+    const sy = VY + item.y * scaleY;
+
+    if (item.type === 'text') {
+      const fw = item.bold ? 'bold' : 'normal';
+      const fs = item.italic ? 'italic' : 'normal';
+      const svgFontSize = item.size * scaleY;
+      const hasBg = item.textBg && item.textBg !== 'none';
+      const pad = svgFontSize * 0.3;
+      const rx = Math.min(pad, 4);
+
+      if (hasBg) {
+        // Estimate text width (rough)
+        const estW = item.text.length * svgFontSize * 0.55 + pad * 2;
+        const estH = svgFontSize + pad * 2;
+        overlayNodes += `<rect x="${(sx - pad).toFixed(2)}" y="${(sy - svgFontSize - pad).toFixed(2)}" width="${estW.toFixed(2)}" height="${estH.toFixed(2)}" rx="${rx}" fill="${item.textBg}"/>`;
+      }
+      overlayNodes += `<text x="${sx.toFixed(2)}" y="${sy.toFixed(2)}" font-family="${item.font}, sans-serif" font-size="${svgFontSize.toFixed(2)}" fill="${item.color}" font-weight="${fw}" font-style="${fs}" dominant-baseline="auto">${item.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</text>`;
+
+    } else if (item.type === 'logo') {
+      const svgW = item.size * scaleX;
+      const svgH = item.size * scaleY;
+      overlayNodes += `<image href="${item.src}" x="${sx.toFixed(2)}" y="${sy.toFixed(2)}" width="${svgW.toFixed(2)}" height="${svgH.toFixed(2)}" preserveAspectRatio="xMidYMid meet"/>`;
+    }
+  });
+
+  // ── 5. Inline CSS vars as actual colours ──────────────────────────────────
+  let capInner = new XMLSerializer().serializeToString(capSvg);
+  CAP_PARTS.forEach(p => {
+    const colour = state.colours[p.id];
+    const re = new RegExp('var\(' + p.cssVar.replace(/[-]/g,'\-') + '\)', 'g');
+    capInner = capInner.replace(re, colour);
+  });
+  // Strip outer <svg> wrapper — we'll wrap in our own
+  capInner = capInner.replace(/<svg[^>]*>/, '').replace(/<\/svg>$/, '');
+
+  // ── 6. Compose final SVG ──────────────────────────────────────────────────
+  const out = `<svg viewBox="${VX} ${VY} ${VW} ${VH}" width="1040" height="520" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+${capInner}
+<g id="overlay">${overlayNodes}</g>
+</svg>`;
+
+  return out;
+}
+
+function downloadSVGTest() {
+  const svgStr = getCompositeSVGString();
+  if (!svgStr) { alert('No design to download yet!'); return; }
+  const blob = new Blob([svgStr], {type:'image/svg+xml'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -828,7 +980,12 @@ function downloadDesignSVG() {
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  return true;
+}
+
+function getSVGDataURL() {
+  const svgStr = getCompositeSVGString();
+  if (!svgStr) return null;
+  return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgStr)));
 }
 
 function submitOrder() {
@@ -838,37 +995,57 @@ function submitOrder() {
   const f = state.form;
   const sideTags = parseInt(state.form.sideTags) || 0;
   const wantUnderbrim = !!state.form.wantUnderbrim;
+  const textCount = state.items.filter(i=>i.type==='text').length;
+
+  // Pricing
+  const TIERS = [{min:25,max:49,price:30},{min:50,max:99,price:22},{min:100,max:199,price:18},{min:200,max:499,price:16},{min:500,max:Infinity,price:14}];
+  const qty = parseInt(f.qty) || 0;
+  const tier = TIERS.find(t => qty >= t.min && qty <= t.max);
+  const extraPerHat = (sideTags*0.5) + (wantUnderbrim?1:0) + (textCount*0.5);
+  const totalOrder = tier ? (tier.price + extraPerHat) * qty : null;
+
   const extras = [
-    sideTags > 0 ? '+ Side embroidery tags: ' + sideTags + ' × $0.50/hat' : null,
+    textCount > 0 ? `+ Text embroidery: ${textCount} × $0.50/hat` : null,
+    sideTags > 0 ? `+ Side embroidery tags: ${sideTags} × $0.50/hat` : null,
     wantUnderbrim ? '+ Underbrim photo print: $1.00/hat' : null,
   ].filter(Boolean).join('\n') || 'None';
-  const body = `CAP DESIGN ORDER
-================
-Name: ${f.name}
-Email: ${f.email}
-Phone: ${f.phone||'—'}
-Qty: ${f.qty||'—'}
-Notes: ${f.notes||'—'}
 
-COLOURS:
-${cl}
+  const svgDataUrl = getSVGDataURL();
 
-TEXT ELEMENTS: ${tl}
-LOGOS: ${ll}
-EXTRAS: ${extras}
-
----
-NOTE: Please also attach the downloaded cap design SVG file to this email.
-The file "brandem-cap-design.svg" should have downloaded automatically.`;
-
-  // 1. Download the SVG file
-  downloadDesignSVG();
-  // 2. Open mailto
-  setTimeout(() => {
-    window.open('mailto:howdy@brandemau.com?subject=Cap Design - ' + encodeURIComponent(f.name) + '&body=' + encodeURIComponent(body));
-  }, 400);
-  state.sent = true;
+  // Show sending state
+  state.sending = true;
   renderPanel();
+
+  // ── EmailJS send ──────────────────────────────────────────────────────────
+  // SETUP: replace YOUR_PUBLIC_KEY, YOUR_SERVICE_ID, YOUR_TEMPLATE_ID
+  // with values from emailjs.com dashboard
+  const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';
+  const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';
+  const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';
+
+  emailjs.init(EMAILJS_PUBLIC_KEY);
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+    customer_name:  f.name,
+    customer_email: f.email,
+    customer_phone: f.phone || '—',
+    quantity:       f.qty || '—',
+    notes:          f.notes || '—',
+    colours:        cl,
+    text_elements:  tl,
+    logos:          ll + ' logo(s)',
+    extras:         extras,
+    total:          totalOrder ? '$' + totalOrder.toFixed(2) : '—',
+    svg_data:       svgDataUrl || '',
+    to_email:       'howdy@brandemau.com',
+  }).then(() => {
+    state.sending = false;
+    state.sent = true;
+    renderPanel();
+  }).catch(err => {
+    state.sending = false;
+    alert('Something went wrong sending your order. Please email howdy@brandemau.com directly.\n\nError: ' + JSON.stringify(err));
+    renderPanel();
+  });
 }
 
 function resetAll() {
@@ -941,7 +1118,7 @@ function createDragItem(item) {
       const hasBg = item.textBg && item.textBg !== 'none';
       if (hasBg) {
         const wrap = document.createElement('div');
-        wrap.style.cssText = `background:${item.textBg};border-radius:25px;padding:25px;display:inline-block;line-height:0;pointer-events:none`;
+        wrap.style.cssText = `background:${item.textBg};border-radius:8px;padding:4px 10px;display:inline-block;line-height:0;pointer-events:none`;
         wrap.innerHTML = svg || '';
         content.appendChild(wrap);
       } else {
@@ -952,7 +1129,7 @@ function createDragItem(item) {
       if (hasBg) {
         // Wrap in a bg div that hugs the text, then put text inside
         const bgWrap = document.createElement('div');
-        bgWrap.style.cssText = `display:inline-block;background:${item.textBg};border-radius:25px;padding:25px;pointer-events:none`;
+        bgWrap.style.cssText = `display:inline-block;background:${item.textBg};border-radius:8px;padding:4px 10px;pointer-events:none`;
         const span = document.createElement('span');
         span.style.cssText = `font-family:${item.font};font-size:${item.size}px;color:${item.color};font-weight:${item.bold?'bold':'normal'};font-style:${item.italic?'italic':'normal'};white-space:nowrap;display:block;letter-spacing:.5px`;
         span.textContent = item.text;
@@ -1025,9 +1202,10 @@ function selectItem(id) {
   state.selId = id;
   // Switch sidebar to text tab so controls are visible
   const item = state.items.find(i => i.id === id);
-  if (item && (item.type === 'text' || item.type === 'logo')) {
-    state.tab = 'text';
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === 'text'));
+  if (item) {
+    const targetTab = item.type === 'logo' ? 'logo' : 'text';
+    state.tab = targetTab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === targetTab));
   }
   renderCanvas();
   renderPanel();
@@ -1039,6 +1217,12 @@ function resizeItem(id, dir) {
   const isText = item.type==='text';
   item.size = Math.max(isText?8:20, item.size + (isText?2:10)*dir);
   renderCanvas();
+  // Update label + slider value without full renderPanel
+  const prefix = isText ? 'txt' : 'logo';
+  const lbl = document.getElementById(prefix+'-size-lbl-'+id);
+  if (lbl) lbl.textContent = 'Size: '+item.size+'px';
+  const sliders = document.querySelectorAll('input[type=range]');
+  sliders.forEach(s => { if (s.closest('[data-id="'+id+'"]') || (lbl && s.parentElement && s.parentElement.previousElementSibling === lbl.parentElement)) s.value = item.size; });
 }
 
 function recolorItem(id, color) {
@@ -1065,11 +1249,43 @@ document.getElementById('canvas-items').addEventListener('click', () => {
 // Responsive hint
 function updateHintText() {
   const hint = document.getElementById('hint-inner');
-  if (hint) hint.textContent = window.innerWidth < 700
+  if (hint) hint.innerHTML = window.innerWidth < 700
     ? 'Add text or a logo using the panel below'
     : 'Add text or a logo using the panel below';
 }
 window.addEventListener('resize', updateHintText);
+
+
+// ── PANEL DRAG ────────────────────────────────────────────────────────────────
+(function() {
+  const MIN_H = 48, MAX_H = window.innerHeight * 0.75;
+  let dragging = false, startY = 0, startH = 0;
+  function initDrag() {
+    const handle = document.getElementById('panel-drag');
+    const sidebar = document.getElementById('sidebar');
+    if (!handle || !sidebar) return;
+    const onStart = (y) => {
+      dragging = true;
+      startY = y;
+      startH = sidebar.offsetHeight;
+      document.body.style.userSelect = 'none';
+    };
+    const onMove = (y) => {
+      if (!dragging) return;
+      const delta = startY - y;
+      const newH = Math.max(MIN_H, Math.min(window.innerHeight * 0.85, startH + delta));
+      sidebar.style.height = newH + 'px';
+    };
+    const onEnd = () => { dragging = false; document.body.style.userSelect = ''; };
+    handle.addEventListener('mousedown', e => onStart(e.clientY));
+    handle.addEventListener('touchstart', e => onStart(e.touches[0].clientY), {passive:true});
+    window.addEventListener('mousemove', e => onMove(e.clientY));
+    window.addEventListener('touchmove', e => onMove(e.touches[0].clientY), {passive:true});
+    window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchend', onEnd);
+  }
+  document.addEventListener('DOMContentLoaded', initDrag);
+})();
 
 renderCap();
 renderPanel();
