@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <title>Brandem Cap Designer</title>
-<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Montserrat:wght@400;700&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans','Segoe UI',system-ui,sans-serif;background:#F4F3EC;color:#47360B;height:100dvh;overflow:hidden;display:flex;flex-direction:column;margin:0}
@@ -145,6 +145,19 @@ input,select,textarea{font-family:inherit}
   .part-label{font-size:11px}
   .text-input{font-size:16px} /* prevent iOS zoom on focus */
 
+  /* Panel text sizing — compact for mobile */
+  .field-label{font-size:9px}
+  .section-label{font-size:9px}
+  .part-label{font-size:11px}
+  .part-sub{font-size:9px}
+  #panel{padding:6px 8px;gap:5px}
+  .btn-primary{padding:11px;font-size:12px}
+  .btn-secondary{font-size:10px;padding:5px 8px}
+  .text-input{padding:7px 8px;font-size:16px}
+  select.text-input{font-size:14px}
+  .shape-btn{padding:4px 6px}
+  .shape-btn span{font-size:9px}
+
   /* Zoom controls: bottom right */
   .zoom-controls{bottom:4px;right:8px}
   .zoom-btn{width:26px;height:26px;font-size:14px}
@@ -156,6 +169,7 @@ input,select,textarea{font-family:inherit}
   /* Part rows: 2-column grid on colours tab */
   /* Buttons: bigger tap targets */
   .btn-primary{padding:13px;font-size:13px}
+  .zoom-controls{display:none !important}
 }
 
 @media(max-width:400px){
@@ -281,7 +295,7 @@ const COLOURS = [
   {name:"CREAM #134",hex:"#e6d6c5"},{name:"BLACK",hex:"#000000"},
 ];
 
-const FONTS = ["Arial","Georgia","Impact","Verdana","Trebuchet MS","Times New Roman","Courier New","Palatino","Tahoma","Comic Sans MS"];
+const FONTS = ["Arial","Impact","Montserrat"];
 
 const CAP_PARTS = [
   {id:"button",    label:"Button",       cssVar:"--cap-button",    def:"#d14257"},
@@ -304,7 +318,7 @@ const state = {
   pickerTarget: null,
   newText: 'YOUR TEXT',
   font: 'Arial',
-  tSize: 24,
+  tSize: 8,
   tColor: '#F74D24',
   bold: false,
   italic: false,
@@ -369,6 +383,13 @@ function applyZoom() {
     stage.style.height = (natH * z + 48) + 'px';
   }
   const zl = document.getElementById('zoom-label'); if (zl) zl.textContent = Math.round(z*100) + '%';
+}
+
+function limitLines(el, max) {
+  const lines = el.value.split('\n');
+  if (lines.length > max) {
+    el.value = lines.slice(0, max).join('\n');
+  }
 }
 
 function colourName(hex) {
@@ -498,14 +519,14 @@ function renderTextPanel() {
           <div style="font-size:10px;font-weight:700;color:#C08B3D;letter-spacing:1px;text-transform:uppercase">✏️ Editing: "${escHtml(sel.text.substring(0,16))}${sel.text.length>16?'…':''}"</div>
           <button onclick="state.selId=null;renderCanvas();renderPanel()" style="background:none;border:none;color:#9A8A6A;font-size:16px;cursor:pointer;padding:0;line-height:1">✕</button>
         </div>
-        <input class="text-input" style="font-size:13px" value="${escHtml(sel.text)}" oninput="state.items.find(i=>i.id===${sel.id}).text=this.value;renderCanvas()"/>
+        <textarea class="text-input" rows="2" maxlength="80" style="font-size:13px;resize:none;line-height:1.4;text-align:center" oninput="limitLines(this,2);state.items.find(i=>i.id===${sel.id}).text=this.value;renderCanvas()">${escHtml(sel.text)}</textarea>
         <div>
           <div class="field-label">Font</div>
           <select class="text-input" style="padding:7px 8px;font-size:12px" onchange="state.items.find(i=>i.id===${sel.id}).font=this.value;renderCanvas()">${fontOpts}</select>
         </div>
         <div>
           <div class="field-label" id="txt-size-lbl-${sel.id}">Size: ${sel.size}px</div>
-          <input type="range" min="4" max="120" value="${sel.size}" style="width:100%;accent-color:#C08B3D"
+          <input type="range" min="1" max="12" value="${sel.size}" style="width:100%;accent-color:#C08B3D"
             oninput="state.items.find(i=>i.id===${sel.id}).size=+this.value;renderCanvas();var l=document.getElementById('txt-size-lbl-${sel.id}');if(l)l.textContent='Size: '+this.value+'px';"/>
         </div>
         <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap">
@@ -557,15 +578,18 @@ function renderTextPanel() {
 
   return `
     ${selectedEditor}
-    <div class="section-label">Add new text</div>
-    <input id="new-text-input" class="text-input" value="${escHtml(state.newText)}" placeholder="Type your text…" oninput="state.newText=this.value"/>
+    <div style="border-top:1.5px solid rgba(0,0,0,.1);margin:4px 0"></div>
+    <button onclick="state.selId=null;renderCanvas();renderPanel();setTimeout(()=>{var f=document.getElementById('add-text-form');if(f)f.style.display='';var i=document.getElementById('new-text-input');if(i)i.focus();},50)" style="width:100%;padding:8px;border-radius:8px;border:1.5px solid #47360B;background:#47360B;color:#FCD68A;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.5px;text-transform:uppercase">✚ Add ${sel?'Another':'New'} Text</button>
+    <div id="add-text-form" style="${sel ? 'display:none' : ''}">
+    <div class="section-label" style="margin-top:4px">Add new text</div>
+    <textarea id="new-text-input" class="text-input" rows="2" placeholder="Type your text… (Enter for 2nd line)" maxlength="80" style="resize:none;line-height:1.4;text-align:center" oninput="limitLines(this,2);state.newText=this.value">${escHtml(state.newText)}</textarea>
     <div>
       <div class="field-label">Font</div>
       <select id="font-select" class="text-input" style="padding:7px 8px;font-size:12px">${fontOptions}</select>
     </div>
     <div>
       <div class="field-label">Size: ${state.tSize}px</div>
-      <input type="range" id="size-slider" min="10" max="60" value="${state.tSize}" style="width:100%;accent-color:#C08B3D"/>
+      <input type="range" id="size-slider" min="1" max="12" value="${state.tSize}" style="width:100%;accent-color:#C08B3D"/>
     </div>
     <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap">
       <div>
@@ -586,6 +610,7 @@ function renderTextPanel() {
       </div>
     </div>
     <button class="btn-primary" onclick="addText()">✚ Add Text to Cap</button>
+    </div>
     ${textItems ? `<div class="section-label" style="margin-top:4px">On Cap — tap to edit</div>${textItems}` : ''}
   `;
 }
@@ -782,11 +807,11 @@ function renderOrderPanel() {
       Enter a quantity above to see your estimate
     </div>`;
 
-  const canSubmit = state.form.name && state.form.email;
-
   // Qty preset buttons 25,50,75...500
   const qtyNum = parseInt(state.form.qty) || 0;
   const qtyValid = qtyNum >= 25 && qtyNum % 25 === 0;
+
+  const canSubmit = !!(state.form.name && state.form.email && qtyValid);
   const qtyWarn = qtyNum > 0 && (!qtyValid);
   const qtyWarnMsg = qtyNum > 0 && qtyNum < 25
     ? '⚠️ Minimum order is 25 hats'
@@ -1014,6 +1039,12 @@ function downloadSVGTest() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function getSVGString() {
+  const svgEl = document.querySelector('#cap-svg-wrap svg');
+  if (!svgEl) return null;
+  return new XMLSerializer().serializeToString(svgEl);
+}
+
 function getSVGDataURL() {
   const svgStr = getCompositeSVGString();
   if (!svgStr) return null;
@@ -1060,6 +1091,8 @@ function submitOrder() {
       logos:         ll + ' logo(s)',
       extras:        extras,
       total:         totalOrder ? '$' + totalOrder.toFixed(2) : '—',
+      svg:           btoa(unescape(encodeURIComponent(getCompositeSVGString()||''))),
+      underbrim_photo: state.underbrimPhoto || null,
     })
   })
   .then(r => r.json())
@@ -1213,16 +1246,23 @@ function createDragItem(item) {
         // Wrap in a bg div that hugs the text, then put text inside
         const bgWrap = document.createElement('div');
         bgWrap.style.cssText = `display:inline-block;background:${item.textBg};border-radius:8px;padding:4px 10px;pointer-events:none`;
-        const span = document.createElement('span');
-        span.style.cssText = `font-family:${item.font};font-size:${item.size}px;color:${item.color};font-weight:${item.bold?'bold':'normal'};font-style:${item.italic?'italic':'normal'};white-space:nowrap;display:block;letter-spacing:.5px`;
-        span.textContent = item.text;
-        bgWrap.appendChild(span);
+        item.text.split('\n').slice(0,2).forEach(line => {
+          const span = document.createElement('span');
+          span.style.cssText = `font-family:${item.font};font-size:${item.size}px;color:${item.color};font-weight:${item.bold?'bold':'normal'};font-style:${item.italic?'italic':'normal'};white-space:nowrap;display:block;letter-spacing:.5px;text-align:center`;
+          span.textContent = line;
+          bgWrap.appendChild(span);
+        });
         content.appendChild(bgWrap);
       } else {
-        const span = document.createElement('span');
-        span.style.cssText = `font-family:${item.font};font-size:${item.size}px;color:${item.color};font-weight:${item.bold?'bold':'normal'};font-style:${item.italic?'italic':'normal'};white-space:nowrap;pointer-events:none;display:block;letter-spacing:.5px`;
-        span.textContent = item.text;
-        content.appendChild(span);
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'display:inline-block;pointer-events:none';
+        item.text.split('\n').slice(0,2).forEach(line => {
+          const span = document.createElement('span');
+          span.style.cssText = `font-family:${item.font};font-size:${item.size}px;color:${item.color};font-weight:${item.bold?'bold':'normal'};font-style:${item.italic?'italic':'normal'};white-space:nowrap;pointer-events:none;display:block;letter-spacing:.5px;text-align:center`;
+          span.textContent = line;
+          wrapper.appendChild(span);
+        });
+        content.appendChild(wrapper);
       }
     }
   } else {
@@ -1298,8 +1338,8 @@ function createDragItem(item) {
       );
       const scale = dist / pinchStartDist;
       const isText = item.type === 'text';
-      const min = isText ? 4 : 10;
-      const max = isText ? 120 : 400;
+      const min = isText ? 1 : 10;
+      const max = isText ? 12 : 400;
       item.size = Math.round(Math.max(min, Math.min(max, pinchStartSize * scale)));
       renderCanvas();
       // update label if visible
@@ -1333,7 +1373,7 @@ function resizeItem(id, dir) {
   const item = state.items.find(i=>i.id===id);
   if (!item) return;
   const isText = item.type==='text';
-  item.size = Math.max(isText?4:10, item.size + (isText?1:5)*dir);
+  item.size = Math.max(isText?1:10, Math.min(isText?12:400, item.size + (isText?1:5)*dir));
   renderCanvas();
   // Update label + slider value without full renderPanel
   const prefix = isText ? 'txt' : 'logo';
@@ -1432,6 +1472,11 @@ updateHintText();
         e.preventDefault();
         initialDist = getDistance(e.touches);
         initialZoom = state.zoom;
+        // Also store selected item size for item-resize mode
+        if (state.selId) {
+          const selItem = state.items.find(i => i.id === state.selId);
+          if (selItem) initialZoom._itemSize = selItem.size;
+        }
       }
     }, {passive: false});
 
@@ -1440,9 +1485,23 @@ updateHintText();
         e.preventDefault();
         const dist = getDistance(e.touches);
         const scale = dist / initialDist;
-        const MIN = 0.25, MAX = 3;
-        state.zoom = Math.min(MAX, Math.max(MIN, initialZoom * scale));
-        applyZoom();
+        // If item selected — resize it, don't zoom whiteboard
+        if (state.selId) {
+          const selItem = state.items.find(i => i.id === state.selId);
+          if (selItem) {
+            const startSize = initialZoom._itemSize || selItem.size;
+            const isText = selItem.type === 'text';
+            selItem.size = Math.round(Math.max(isText?4:10, Math.min(isText?120:400, startSize * scale)));
+            renderCanvas();
+            const lbl = document.getElementById((isText?'txt':'logo')+'-size-lbl-'+selItem.id);
+            if (lbl) lbl.textContent = 'Size: '+selItem.size+'px';
+          }
+        } else {
+          // No item selected — zoom whiteboard
+          const MIN = 0.25, MAX = 3;
+          state.zoom = Math.min(MAX, Math.max(MIN, initialZoom * scale));
+          applyZoom();
+        }
       }
     }, {passive: false});
 
@@ -1457,6 +1516,18 @@ updateHintText();
 })();
 
 setTimeout(applyZoom, 100);
+</script>
+
+<script>
+// Prevent iOS double-tap zoom
+let lastTap = 0;
+document.addEventListener('touchend', function(e) {
+  const now = Date.now();
+  if (now - lastTap < 300) {
+    e.preventDefault();
+  }
+  lastTap = now;
+}, {passive: false});
 </script>
 </body>
 </html>
