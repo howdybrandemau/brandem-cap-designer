@@ -2,10 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <title>Brandem Cap Designer</title>
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans','Segoe UI',system-ui,sans-serif;background:#F4F3EC;color:#47360B;height:100dvh;overflow:hidden;display:flex;flex-direction:column;margin:0}
@@ -506,7 +505,7 @@ function renderTextPanel() {
         </div>
         <div>
           <div class="field-label" id="txt-size-lbl-${sel.id}">Size: ${sel.size}px</div>
-          <input type="range" min="10" max="60" value="${sel.size}" style="width:100%;accent-color:#C08B3D"
+          <input type="range" min="4" max="120" value="${sel.size}" style="width:100%;accent-color:#C08B3D"
             oninput="state.items.find(i=>i.id===${sel.id}).size=+this.value;renderCanvas();var l=document.getElementById('txt-size-lbl-${sel.id}');if(l)l.textContent='Size: '+this.value+'px';"/>
         </div>
         <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap">
@@ -797,14 +796,17 @@ function renderOrderPanel() {
 
   return `
     <div>
-      <div class="field-label" style="margin-bottom:6px">How many hats?</div>
-      <input type="number" min="25" step="25" placeholder="e.g. 50, 100, 200…"
-        value="${escHtml(state.form.qty)}"
-        class="text-input"
-        style="font-size:18px;font-weight:700;text-align:center;${qtyValid?'border-color:#47360B;':''}${qtyWarn?'border-color:#F74D24;':''}"
-        oninput="state.form.qty=this.value;renderPanel()"/>
-      ${qtyWarnMsg ? `<div style="font-size:11px;color:#F74D24;font-weight:600;margin-top:4px;text-align:center">${qtyWarnMsg}</div>` : ''}
-      <div style="font-size:10px;color:#7A6030;margin-top:4px;text-align:center">Orders in multiples of 25 · Minimum 25</div>
+      <div class="field-label" style="margin-bottom:8px">How many hats?</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button onclick="var q=Math.max(25,(parseInt(state.form.qty)||25)-25);state.form.qty=String(q);renderPanel()"
+          style="width:44px;height:44px;border-radius:10px;border:1.5px solid rgba(0,0,0,.15);background:rgba(255,255,255,0.7);color:#47360B;font-size:22px;font-weight:700;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center">−</button>
+        <div style="flex:1;text-align:center;font-size:26px;font-weight:800;color:${qtyNum>0?'#47360B':'#B8A070'};font-family:'Black Han Sans',sans-serif">
+          ${qtyNum > 0 ? qtyNum : '—'}
+        </div>
+        <button onclick="var q=(parseInt(state.form.qty)||0)+25;state.form.qty=String(q);renderPanel()"
+          style="width:44px;height:44px;border-radius:10px;border:1.5px solid rgba(0,0,0,.15);background:rgba(255,255,255,0.7);color:#47360B;font-size:22px;font-weight:700;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center">+</button>
+      </div>
+      <div style="font-size:10px;color:#7A6030;margin-top:6px;text-align:center">Tap + or − · Multiples of 25 · Minimum 25</div>
     </div>
 
     ${qtyValid && activeTier ? `
@@ -1041,38 +1043,38 @@ function submitOrder() {
 
   const svgDataUrl = getSVGDataURL();
 
-  // Show sending state
   state.sending = true;
   renderPanel();
 
-  // ── EmailJS send ──────────────────────────────────────────────────────────
-  // SETUP: replace YOUR_PUBLIC_KEY, YOUR_SERVICE_ID, YOUR_TEMPLATE_ID
-  // with values from emailjs.com dashboard
-  const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';
-  const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';
-  const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';
-
-  emailjs.init(EMAILJS_PUBLIC_KEY);
-  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-    customer_name:  f.name,
-    customer_email: f.email,
-    customer_phone: f.phone || '—',
-    quantity:       f.qty || '—',
-    notes:          f.notes || '—',
-    colours:        cl,
-    text_elements:  tl,
-    logos:          ll + ' logo(s)',
-    extras:         extras,
-    total:          totalOrder ? '$' + totalOrder.toFixed(2) : '—',
-    svg_data:       svgDataUrl || '',
-    to_email:       'howdy@brandemau.com',
-  }).then(() => {
+  fetch('/api/order', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      name:          f.name,
+      email:         f.email,
+      phone:         f.phone || '—',
+      qty:           f.qty || '—',
+      notes:         f.notes || '—',
+      colours:       cl,
+      text_elements: tl,
+      logos:         ll + ' logo(s)',
+      extras:        extras,
+      total:         totalOrder ? '$' + totalOrder.toFixed(2) : '—',
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
     state.sending = false;
-    state.sent = true;
+    if (data.ok) {
+      state.sent = true;
+    } else {
+      alert('Something went wrong. Please email howdy@brandemau.com directly.\n\n' + (data.error || ''));
+    }
     renderPanel();
-  }).catch(err => {
+  })
+  .catch(() => {
     state.sending = false;
-    alert('Something went wrong sending your order. Please email howdy@brandemau.com directly.\n\nError: ' + JSON.stringify(err));
+    alert('Could not connect. Please email howdy@brandemau.com directly.');
     renderPanel();
   });
 }
@@ -1254,7 +1256,24 @@ function createDragItem(item) {
   };
   el.addEventListener('mousedown', e => { e.stopPropagation(); startDrag(e.clientX, e.clientY); });
   el.addEventListener('click', e => e.stopPropagation());
-  el.addEventListener('touchstart', e => { e.stopPropagation(); startDrag(e.touches[0].clientX, e.touches[0].clientY); });
+  let pinchStartDist = null;
+  let pinchStartSize = null;
+  el.addEventListener('touchstart', e => {
+    e.stopPropagation();
+    if (e.touches.length === 2) {
+      // Two fingers — pinch to resize
+      pinchStartDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      pinchStartSize = item.size;
+      selectItem(item.id);
+    } else {
+      // One finger — drag
+      pinchStartDist = null;
+      startDrag(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, {passive: true});
 
   function moveItem(cx, cy) {
     if (!drag || state.selId !== item.id) return;
@@ -1271,9 +1290,27 @@ function createDragItem(item) {
     if (liveEl._positionToolbar) liveEl._positionToolbar();
   }
   window.addEventListener('mousemove', e => moveItem(e.clientX, e.clientY));
-  window.addEventListener('touchmove', e => moveItem(e.touches[0].clientX, e.touches[0].clientY), {passive:true});
+  window.addEventListener('touchmove', e => {
+    if (e.touches.length === 2 && pinchStartDist !== null && state.selId === item.id) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const scale = dist / pinchStartDist;
+      const isText = item.type === 'text';
+      const min = isText ? 4 : 10;
+      const max = isText ? 120 : 400;
+      item.size = Math.round(Math.max(min, Math.min(max, pinchStartSize * scale)));
+      renderCanvas();
+      // update label if visible
+      const lbl = document.getElementById((isText?'txt':'logo')+'-size-lbl-'+item.id);
+      if (lbl) lbl.textContent = 'Size: '+item.size+'px';
+    } else if (e.touches.length === 1) {
+      moveItem(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, {passive: true});
   window.addEventListener('mouseup', () => { drag = null; });
-  window.addEventListener('touchend', () => { drag = null; });
+  window.addEventListener('touchend', () => { drag = null; pinchStartDist = null; });
 
   return el;
 }
@@ -1296,7 +1333,7 @@ function resizeItem(id, dir) {
   const item = state.items.find(i=>i.id===id);
   if (!item) return;
   const isText = item.type==='text';
-  item.size = Math.max(isText?8:20, item.size + (isText?2:10)*dir);
+  item.size = Math.max(isText?4:10, item.size + (isText?1:5)*dir);
   renderCanvas();
   // Update label + slider value without full renderPanel
   const prefix = isText ? 'txt' : 'logo';
@@ -1328,10 +1365,11 @@ document.getElementById('canvas-items').addEventListener('click', () => {
 });
 
 // Responsive hint
+
 function updateHintText() {
   const hint = document.getElementById('hint-inner');
-  if (hint) hint.innerHTML = window.innerWidth < 700
-    ? 'Add text or a logo using the panel on the left'
+  if (hint) hint.textContent = window.innerWidth < 700
+    ? 'Add text or a logo using the panel below'
     : 'Add text or a logo using the panel on the left';
 }
 window.addEventListener('resize', updateHintText);
@@ -1372,6 +1410,52 @@ renderCap();
 renderPanel();
 updateHint();
 updateHintText();
+updateHintText();
+
+// ── PINCH TO ZOOM ─────────────────────────────────────────────────────────────
+(function() {
+  let initialDist = null;
+  let initialZoom = 1;
+
+  function getDistance(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx*dx + dy*dy);
+  }
+
+  function initPinch() {
+    const scroller = document.getElementById('zoom-scroller');
+    if (!scroller) return;
+
+    scroller.addEventListener('touchstart', e => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        initialDist = getDistance(e.touches);
+        initialZoom = state.zoom;
+      }
+    }, {passive: false});
+
+    scroller.addEventListener('touchmove', e => {
+      if (e.touches.length === 2 && initialDist !== null) {
+        e.preventDefault();
+        const dist = getDistance(e.touches);
+        const scale = dist / initialDist;
+        const MIN = 0.25, MAX = 3;
+        state.zoom = Math.min(MAX, Math.max(MIN, initialZoom * scale));
+        applyZoom();
+      }
+    }, {passive: false});
+
+    scroller.addEventListener('touchend', e => {
+      if (e.touches.length < 2) {
+        initialDist = null;
+      }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', initPinch);
+})();
+
 setTimeout(applyZoom, 100);
 </script>
 </body>
