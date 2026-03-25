@@ -16,8 +16,6 @@ input,select,textarea{font-family:inherit}
 #logo-img{width:44px;height:44px;object-fit:contain}
 .hdr-site{font-family:'Black Han Sans',sans-serif;font-size:16px;color:#47360B;letter-spacing:.5px;line-height:1;text-transform:uppercase}
 .hdr-sub{font-family:'Black Han Sans',sans-serif;font-size:11px;color:#9A8A6A;letter-spacing:1px;line-height:1.5;text-transform:uppercase}
-#order-btn{background:#F74D24;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:700;color:#fff;border:none;margin-left:auto;font-family:'Black Han Sans',sans-serif;letter-spacing:1px;box-shadow:0 3px 10px rgba(247,77,36,.33)}
-#order-btn:hover{opacity:.9;transform:translateY(-1px)}
 /* BODY */
 #body{flex:1;display:flex;flex-direction:row;overflow:hidden;min-height:0}
 /* SIDEBAR */
@@ -26,7 +24,7 @@ input,select,textarea{font-family:inherit}
 .tab-btn{flex:1;padding:8px 4px;border:none;font-size:9px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;line-height:1.4;background:transparent;color:#7A6030;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;min-width:0}
 .tab-btn.active{background:rgba(255,255,255,0.5);color:#47360B;border-bottom:2px solid #47360B}
 .tab-btn .tab-icon{font-size:16px;display:block;margin-bottom:1px}
-#panel{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:6px}
+#panel{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:6px;scroll-behavior:smooth}
 /* CANVAS */
 #canvas-area{flex:1;display:flex;flex-direction:column;background:#E8E6DC;overflow:hidden;min-height:0;min-width:0}
 .dot-grid{position:fixed;inset:0;background-image:radial-gradient(circle,rgba(71,54,11,.08) 1px,transparent 1px);background-size:24px 24px;pointer-events:none;z-index:0}
@@ -121,7 +119,7 @@ input,select,textarea{font-family:inherit}
 @media(max-width:700px){
   /* Layout: cap on top, panel pinned to bottom */
   #body{flex-direction:column}
-  #sidebar{width:100%;height:52dvh;border-right:none;border-top:2px solid #C8A830;order:2;flex-shrink:0}
+  #sidebar{width:100%;height:48dvh;border-right:none;border-top:2px solid #C8A830;order:2;flex-shrink:0}
   #canvas-area{order:1;flex:1;min-height:0}
   #zoom-scroller{padding:12px;align-items:center;justify-content:center}
   #whiteboard{width:min(calc(100vw - 24px), calc((44dvh) * 2))}
@@ -131,7 +129,6 @@ input,select,textarea{font-family:inherit}
   #logo-img{width:36px;height:36px}
   .hdr-site{font-size:13px}
   .hdr-sub{font-size:9px}
-  #order-btn{padding:6px 12px;font-size:11px}
   #hdr-total div:first-child{font-size:8px}
   #hdr-total div:last-child{font-size:14px}
 
@@ -139,14 +136,8 @@ input,select,textarea{font-family:inherit}
   .tab-btn{padding:6px 2px;font-size:8px;letter-spacing:0}
   .tab-btn .tab-icon{font-size:18px;margin-bottom:0}
 
-  /* Panel: touch-friendly */
-  #panel{padding:8px 10px;gap:6px}
-  .part-row{padding:7px 8px}
-  .part-label{font-size:11px}
-  .text-input{font-size:16px} /* prevent iOS zoom on focus */
-
-  /* Panel text sizing — compact for mobile */
-  .field-label{font-size:9px}
+  /* Panel: touch-friendly + compact */
+    .field-label{font-size:9px}
   .section-label{font-size:9px}
   .part-label{font-size:11px}
   .part-sub{font-size:9px}
@@ -187,7 +178,6 @@ input,select,textarea{font-family:inherit}
       <div class="hdr-site">BRANDEMAU.COM</div>
       <div class="hdr-sub">Cap Designer</div>
     </div>
-    <button id="order-btn" onclick="switchTab('order')">PLACE ORDER</button>
   </div>
   <div id="body">
     <div id="sidebar">
@@ -316,9 +306,9 @@ const state = {
   selId: null,
   tab: 'colours',
   pickerTarget: null,
-  newText: 'YOUR TEXT',
+  newText: '',
   font: 'Arial',
-  tSize: 8,
+  tSize: 10,
   tColor: '#F74D24',
   bold: false,
   italic: false,
@@ -442,12 +432,13 @@ function switchTab(tab) {
     b.classList.toggle('active', b.dataset.tab === tab);
   });
   renderPanel();
+  const panel = document.getElementById('panel');
+  if (panel) panel.scrollTop = 0;
 }
 
 // ── PANEL ─────────────────────────────────────────────────────────────────────
-function updateHeaderTotal() { return; // disabled
-  if(false) {
-  const el = document.getElementById('hdr-total');
+function updateHeaderTotal() {
+  const el = document.getElementById('hdr-total'); if(!el) return;
   if (!el) return;
   const qty = parseInt(state.form.qty) || 0;
   const TIERS = [
@@ -464,7 +455,6 @@ function updateHeaderTotal() { return; // disabled
     <div style="font-size:10px;color:#7A6030;font-weight:600;letter-spacing:.5px">${qty} HATS · $${tier.price}/HAT${extra>0?' + EXTRAS':''}</div>
     <div style="font-size:18px;font-weight:800;color:#47360B;font-family:'Black Han Sans',sans-serif">$${total.toFixed(2)}</div>
   </div>`;
-  }
 }
 
 function renderPanel() {
@@ -525,9 +515,9 @@ function renderTextPanel() {
           <select class="text-input" style="padding:7px 8px;font-size:12px" onchange="state.items.find(i=>i.id===${sel.id}).font=this.value;renderCanvas()">${fontOpts}</select>
         </div>
         <div>
-          <div class="field-label" id="txt-size-lbl-${sel.id}">Size: ${sel.size}px</div>
-          <input type="range" min="1" max="12" value="${sel.size}" style="width:100%;accent-color:#C08B3D"
-            oninput="state.items.find(i=>i.id===${sel.id}).size=+this.value;renderCanvas();var l=document.getElementById('txt-size-lbl-${sel.id}');if(l)l.textContent='Size: '+this.value+'px';"/>
+          <div class="field-label" id="txt-size-lbl-${sel.id}">Size: ${sel.sw!==undefined?Math.round(iSize(sel)):'--'}px</div>
+          <input type="range" min="10" max="20" value="${Math.round(iSize(sel))}" style="width:100%;accent-color:#C08B3D"
+            oninput="setISize(state.items.find(i=>i.id===${sel.id}),+this.value);renderCanvas();var l=document.getElementById('txt-size-lbl-${sel.id}');if(l)l.textContent='Size: '+this.value+'px';"/>
         </div>
         <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap">
           <div>
@@ -570,7 +560,7 @@ function renderTextPanel() {
   // ── ADD NEW TEXT ──
   const fontOptions = FONTS.map(f => `<option${f===state.font?' selected':''}>${f}</option>`).join('');
   const textItems = state.items.filter(i=>i.type==='text').map(t => `
-    <div class="text-list-item" onclick="selectItem(${t.id})" style="cursor:pointer;${state.selId===t.id?'border-color:#C08B3D;':''}">
+    <div class="text-list-item" onclick="state.selId===${t.id}?deselectItem():selectItem(${t.id})" style="cursor:pointer;${state.selId===t.id?'border-color:#C08B3D;':''}">
       <div style="display:flex;align-items:center;gap:6px;overflow:hidden"><div style="width:12px;height:12px;border-radius:50%;background:${t.color};border:1.5px solid rgba(0,0,0,.15);flex-shrink:0"></div><span style="font-family:${t.font};color:#47360B;font-size:12px;font-weight:${t.bold?'bold':'normal'};font-style:${t.italic?'italic':'normal'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.text}</span></div>
       <button class="text-list-del" onclick="event.stopPropagation();deleteItem(${t.id})">✕</button>
     </div>
@@ -589,7 +579,7 @@ function renderTextPanel() {
     </div>
     <div>
       <div class="field-label">Size: ${state.tSize}px</div>
-      <input type="range" id="size-slider" min="1" max="12" value="${state.tSize}" style="width:100%;accent-color:#C08B3D"/>
+      <input type="range" id="size-slider" min="10" max="20" value="${state.tSize}" style="width:100%;accent-color:#C08B3D"/>
     </div>
     <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap">
       <div>
@@ -628,11 +618,11 @@ function renderLogoPanel() {
       <div style="display:flex;align-items:center;gap:10px">
         <img src="${sel.src}" style="width:60px;height:48px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,0.5);padding:3px;border:1px solid rgba(0,0,0,.1)"/>
         <div style="flex:1">
-          <div class="field-label" id="logo-size-lbl-${sel.id}">Size: ${sel.size}px</div>
+          <div class="field-label" id="logo-size-lbl-${sel.id}">Size: ${sel.sw!==undefined?Math.round(iSize(sel)):'--'}px</div>
           <div style="display:flex;align-items:center;gap:8px">
             <button onclick="resizeItem(${sel.id},-1)" style="width:32px;height:32px;border-radius:8px;border:1.5px solid rgba(0,0,0,.15);background:rgba(255,255,255,0.7);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#47360B;font-weight:700">−</button>
-            <input type="range" min="20" max="300" value="${sel.size}" style="flex:1;accent-color:#47360B"
-              oninput="state.items.find(i=>i.id===${sel.id}).size=+this.value;renderCanvas();var l=document.getElementById('logo-size-lbl-${sel.id}');if(l)l.textContent='Size: '+this.value+'px';"/>
+            <input type="range" min="20" max="300" value="${Math.round(iSize(sel))}" style="flex:1;accent-color:#47360B"
+              oninput="setISize(state.items.find(i=>i.id===${sel.id}),+this.value);renderCanvas();var l=document.getElementById('logo-size-lbl-${sel.id}');if(l)l.textContent='Size: '+this.value+'px';"/>
             <button onclick="resizeItem(${sel.id},1)" style="width:32px;height:32px;border-radius:8px;border:1.5px solid rgba(0,0,0,.15);background:rgba(255,255,255,0.7);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#47360B;font-weight:700">+</button>
           </div>
         </div>
@@ -811,7 +801,7 @@ function renderOrderPanel() {
   const qtyNum = parseInt(state.form.qty) || 0;
   const qtyValid = qtyNum >= 25 && qtyNum % 25 === 0;
 
-  const canSubmit = !!(state.form.name && state.form.email && qtyValid);
+  const canSubmit = !!(state.form.name && state.form.email);
   const qtyWarn = qtyNum > 0 && (!qtyValid);
   const qtyWarnMsg = qtyNum > 0 && qtyNum < 25
     ? '⚠️ Minimum order is 25 hats'
@@ -861,21 +851,21 @@ function renderOrderPanel() {
     <div class="section-label" style="margin-top:2px">Your Details</div>
     <div>
       <div class="field-label">Name *</div>
-      <input type="text" placeholder="Your name" value="${escHtml(state.form.name)}" class="text-input" oninput="state.form.name=this.value"/>
+      <input type="text" placeholder="Your name" value="${escHtml(state.form.name)}" class="text-input" oninput="state.form.name=this.value;renderPanel()"/>
     </div>
     <div>
       <div class="field-label">Email *</div>
-      <input type="email" placeholder="your@email.com" value="${escHtml(state.form.email)}" class="text-input" oninput="state.form.email=this.value"/>
+      <input type="email" placeholder="your@email.com" value="${escHtml(state.form.email)}" class="text-input" oninput="state.form.email=this.value;renderPanel()"/>
     </div>
     <div>
       <div class="field-label">Phone</div>
-      <input type="tel" placeholder="+61 4xx xxx xxx" value="${escHtml(state.form.phone)}" class="text-input" oninput="state.form.phone=this.value"/>
+      <input type="tel" placeholder="+61 4xx xxx xxx" value="${escHtml(state.form.phone)}" class="text-input" oninput="state.form.phone=this.value;renderPanel()"/>
     </div>
     <div>
       <div class="field-label">Notes</div>
       <textarea placeholder="Deadline, special requirements…" rows="3"
         class="text-input" style="resize:vertical"
-        oninput="state.form.notes=this.value">${escHtml(state.form.notes)}</textarea>
+        oninput="state.form.notes=this.value;renderPanel()">${escHtml(state.form.notes)}</textarea>
     </div>
     <button class="btn-primary" ${canSubmit&&!state.sending?'':'disabled'} onclick="submitOrder()">${state.sending?'⏳ Sending…':'🚀 Submit My Design'}</button>
     <div style="font-size:10px;color:#9A8A6A;text-align:center">We reply within 24 hours · Free shipping Australia-wide</div>
@@ -911,18 +901,35 @@ function setShape(v) {
   renderPanel();
 }
 
+
+// ── ITEM POSITION HELPERS ────────────────────────────────────────────────────
+function getWBSize() {
+  const wb = document.getElementById('whiteboard');
+  return wb ? {w: wb.offsetWidth || 280, h: wb.offsetHeight || 140} : {w: 280, h: 140};
+}
+// Items store px/py/sw as % of whiteboard. These convert for DOM use.
+function iX(item) { const {w} = getWBSize(); return (item.px / 100) * w; }
+function iY(item) { const {h} = getWBSize(); return (item.py / 100) * h; }
+function setIX(item, xPx) { const {w} = getWBSize(); item.px = (xPx / w) * 100; }
+function setIY(item, yPx) { const {h} = getWBSize(); item.py = (yPx / h) * 100; }
+function iSize(item) { const {w} = getWBSize(); return (item.sw / 100) * w; }
+function setISize(item, sizePx) { const {w} = getWBSize(); item.sw = (sizePx / w) * 100; }
+
 function addText() {
   const text = state.newText.trim();
   if (!text) return;
   const existing = state.items.filter(i=>i.type==='text');
-  const y = existing.length > 0 ? 55 + existing.length * 40 : 55;
+  const {w, h} = getWBSize();
+  const rawY = existing.length > 0 ? 55 + existing.length * 40 : 55;
   state.items.push({
     id: state.nextId++, type:'text', text,
-    font: state.font, size: state.tSize, color: state.tColor,
+    font: state.font, color: state.tColor,
     bold: state.bold, italic: state.italic, curve: state.tCurve,
     rotate: 0,
     textBg: state.tBg || 'none',
-    x: 60, y
+    px: (60 / w) * 100,
+    py: (rawY / h) * 100,
+    sw: (state.tSize / w) * 100,
   });
   state.newText = '';
   state.selId = null; // clear selection so editor doesn't block the add form
@@ -940,7 +947,11 @@ function handleLogo(input) {
   const f = input.files[0]; if (!f) return;
   const r = new FileReader();
   r.onload = e => {
-    state.items.push({id: state.nextId++, type:'logo', src: e.target.result, x:80, y:50, size:70});
+    const {w: _lw, h: _lh} = getWBSize();
+    state.items.push({id: state.nextId++, type:'logo', src: e.target.result,
+      px: (80 / _lw) * 100, py: (50 / _lh) * 100,
+      sw: (70 / _lw) * 100,
+    });
     renderCanvas();
     renderPanel();
     updateHint();
@@ -980,13 +991,13 @@ function getCompositeSVGString() {
   let overlayNodes = '';
   state.items.forEach(item => {
     // item.x/y are pixel positions within the whiteboard at zoom=1
-    const sx = VX + item.x * scaleX;
-    const sy = VY + item.y * scaleY;
+    const sx = VX + iX(item) * scaleX;
+    const sy = VY + iY(item) * scaleY;
 
     if (item.type === 'text') {
       const fw = item.bold ? 'bold' : 'normal';
       const fs = item.italic ? 'italic' : 'normal';
-      const svgFontSize = item.size * scaleY;
+      const svgFontSize = iSize(item) * scaleY;
       const hasBg = item.textBg && item.textBg !== 'none';
       const pad = svgFontSize * 0.3;
       const rx = Math.min(pad, 4);
@@ -1000,8 +1011,8 @@ function getCompositeSVGString() {
       overlayNodes += `<text x="${sx.toFixed(2)}" y="${sy.toFixed(2)}" font-family="${item.font}, sans-serif" font-size="${svgFontSize.toFixed(2)}" fill="${item.color}" font-weight="${fw}" font-style="${fs}" dominant-baseline="auto">${item.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</text>`;
 
     } else if (item.type === 'logo') {
-      const svgW = item.size * scaleX;
-      const svgH = item.size * scaleY;
+      const svgW = iSize(item) * scaleX;
+      const svgH = iSize(item) * scaleY;
       overlayNodes += `<image href="${item.src}" x="${sx.toFixed(2)}" y="${sy.toFixed(2)}" width="${svgW.toFixed(2)}" height="${svgH.toFixed(2)}" preserveAspectRatio="xMidYMid meet"/>`;
     }
   });
@@ -1052,6 +1063,12 @@ function getSVGDataURL() {
 }
 
 function submitOrder() {
+  const qtyCheck = parseInt(state.form.qty) || 0;
+  if (!qtyCheck || qtyCheck < 25 || qtyCheck % 25 !== 0) {
+    alert('Please select a valid quantity (multiples of 25, minimum 25) in the Order tab.');
+    switchTab('order');
+    return;
+  }
   const cl = CAP_PARTS.map(p=>`${p.label}: ${colourName(state.colours[p.id])} (${state.colours[p.id]})`).join('\n');
   const tl = state.items.filter(i=>i.type==='text').map(i=>`"${i.text}" | ${i.font} | ${i.size}px | ${i.color}`).join('\n') || 'None';
   const ll = state.items.filter(i=>i.type==='logo').length;
@@ -1122,6 +1139,18 @@ function resetAll() {
 // ── CANVAS ITEMS ──────────────────────────────────────────────────────────────
 function renderCanvas() {
   const container = document.getElementById('canvas-items');
+  if (!container) return;
+  // Migrate any old items that have plain x/y but no px/py
+  const {w: _mw, h: _mh} = getWBSize();
+  state.items.forEach(item => {
+    if (item.px === undefined) {
+      item.px = ((item.x || 60) / (_mw||280)) * 100;
+      item.py = ((item.y || 50) / (_mh||140)) * 100;
+    }
+    if (item.sw === undefined) {
+      item.sw = ((item.size || (item.type==='text'?8:70)) / (_mw||280)) * 100;
+    }
+  });
   container.innerHTML = '';
   state.items.forEach(item => container.appendChild(createDragItem(item)));
 }
@@ -1228,7 +1257,7 @@ let item_arc_id = 0;
 function createDragItem(item) {
   const el = document.createElement('div');
   el.className = 'drag-item' + (state.selId === item.id ? ' selected' : '');
-  el.style.cssText = `left:${item.x}px;top:${item.y}px;position:absolute;cursor:grab;user-select:none;touch-action:none;z-index:${state.selId===item.id?20:10};transform:rotate(${item.rotate||0}deg)`;
+  el.style.cssText = `left:${iX(item).toFixed(1)}px;top:${iY(item).toFixed(1)}px;position:absolute;cursor:grab;user-select:none;touch-action:none;z-index:${state.selId===item.id?20:10};transform:rotate(${item.rotate||0}deg)`;
   el.dataset.id = item.id;
 
   // Content
@@ -1238,7 +1267,7 @@ function createDragItem(item) {
   if (item.type === 'text') {
     const curve = item.curve || 0;
     if (curve !== 0) {
-      const svg = makeCurvedTextSVG(item.text, item.font, item.size, item.color, item.bold, item.italic, curve, null);
+      const svg = makeCurvedTextSVG(item.text, item.font, iSize(item), item.color, item.bold, item.italic, curve, null);
       content.innerHTML = svg || '';
     } else {
       const hasBg = item.textBg && item.textBg !== 'none';
@@ -1248,7 +1277,7 @@ function createDragItem(item) {
         bgWrap.style.cssText = `display:inline-block;background:${item.textBg};border-radius:8px;padding:4px 10px;pointer-events:none`;
         item.text.split('\n').slice(0,2).forEach(line => {
           const span = document.createElement('span');
-          span.style.cssText = `font-family:${item.font};font-size:${item.size}px;color:${item.color};font-weight:${item.bold?'bold':'normal'};font-style:${item.italic?'italic':'normal'};white-space:nowrap;display:block;letter-spacing:.5px;text-align:center`;
+          span.style.cssText = `font-family:${item.font};font-size:${iSize(item).toFixed(1)}px;color:${item.color};font-weight:${item.bold?'bold':'normal'};font-style:${item.italic?'italic':'normal'};white-space:nowrap;display:block;letter-spacing:.5px;text-align:center`;
           span.textContent = line;
           bgWrap.appendChild(span);
         });
@@ -1258,7 +1287,7 @@ function createDragItem(item) {
         wrapper.style.cssText = 'display:inline-block;pointer-events:none';
         item.text.split('\n').slice(0,2).forEach(line => {
           const span = document.createElement('span');
-          span.style.cssText = `font-family:${item.font};font-size:${item.size}px;color:${item.color};font-weight:${item.bold?'bold':'normal'};font-style:${item.italic?'italic':'normal'};white-space:nowrap;pointer-events:none;display:block;letter-spacing:.5px;text-align:center`;
+          span.style.cssText = `font-family:${item.font};font-size:${iSize(item).toFixed(1)}px;color:${item.color};font-weight:${item.bold?'bold':'normal'};font-style:${item.italic?'italic':'normal'};white-space:nowrap;pointer-events:none;display:block;letter-spacing:.5px;text-align:center`;
           span.textContent = line;
           wrapper.appendChild(span);
         });
@@ -1268,7 +1297,7 @@ function createDragItem(item) {
   } else {
     const img = document.createElement('img');
     img.src = item.src;
-    img.style.cssText = `width:${item.size}px;height:auto;pointer-events:none;display:block`;
+    img.style.cssText = `width:${iSize(item).toFixed(1)}px;height:auto;pointer-events:none;display:block`;
     content.appendChild(img);
   }
 
@@ -1292,7 +1321,7 @@ function createDragItem(item) {
   const startDrag = (cx, cy) => {
     selectItem(item.id);
     const r = document.getElementById('canvas-items').getBoundingClientRect();
-    drag = {ox: cx - r.left - item.x, oy: cy - r.top - item.y};
+    drag = {ox: cx - r.left - iX(item), oy: cy - r.top - iY(item)};
   };
   el.addEventListener('mousedown', e => { e.stopPropagation(); startDrag(e.clientX, e.clientY); });
   el.addEventListener('click', e => e.stopPropagation());
@@ -1306,7 +1335,7 @@ function createDragItem(item) {
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY
       );
-      pinchStartSize = item.size;
+      pinchStartSize = iSize(item);
       selectItem(item.id);
     } else {
       // One finger — drag
@@ -1323,10 +1352,11 @@ function createDragItem(item) {
     const liveEl = document.querySelector(`.drag-item[data-id="${item.id}"]`) || el;
     const elW = liveEl.offsetWidth || 60;
     const elH = liveEl.offsetHeight || 20;
-    item.x = Math.max(0, Math.min(r.width - elW, cx - r.left - drag.ox));
-    item.y = Math.max(0, Math.min(r.height - elH, cy - r.top - drag.oy));
-    liveEl.style.left = item.x + 'px';
-    liveEl.style.top  = item.y + 'px';
+    const newX = Math.max(0, Math.min(r.width - elW, cx - r.left - drag.ox));
+    const newY = Math.max(0, Math.min(r.height - elH, cy - r.top - drag.oy));
+    setIX(item, newX); setIY(item, newY);
+    liveEl.style.left = newX + 'px';
+    liveEl.style.top  = newY + 'px';
     if (liveEl._positionToolbar) liveEl._positionToolbar();
   }
   window.addEventListener('mousemove', e => moveItem(e.clientX, e.clientY));
@@ -1338,8 +1368,8 @@ function createDragItem(item) {
       );
       const scale = dist / pinchStartDist;
       const isText = item.type === 'text';
-      const min = isText ? 1 : 10;
-      const max = isText ? 12 : 400;
+      const min = 10;
+      const max = isText ? 20 : 400;
       item.size = Math.round(Math.max(min, Math.min(max, pinchStartSize * scale)));
       renderCanvas();
       // update label if visible
@@ -1353,6 +1383,12 @@ function createDragItem(item) {
   window.addEventListener('touchend', () => { drag = null; pinchStartDist = null; });
 
   return el;
+}
+
+function deselectItem() {
+  state.selId = null;
+  renderCanvas();
+  renderPanel();
 }
 
 function selectItem(id) {
@@ -1373,7 +1409,7 @@ function resizeItem(id, dir) {
   const item = state.items.find(i=>i.id===id);
   if (!item) return;
   const isText = item.type==='text';
-  item.size = Math.max(isText?1:10, Math.min(isText?12:400, item.size + (isText?1:5)*dir));
+  const _cur = iSize(item); setISize(item, Math.max(10, Math.min(isText?20:400, _cur + (isText?1:5)*dir)));
   renderCanvas();
   // Update label + slider value without full renderPanel
   const prefix = isText ? 'txt' : 'logo';
@@ -1413,6 +1449,7 @@ function updateHintText() {
     : 'Add text or a logo using the panel on the left';
 }
 window.addEventListener('resize', updateHintText);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePicker(); });
 
 
 // ── PANEL DRAG ────────────────────────────────────────────────────────────────
@@ -1449,7 +1486,6 @@ window.addEventListener('resize', updateHintText);
 renderCap();
 renderPanel();
 updateHint();
-updateHintText();
 updateHintText();
 
 // ── PINCH TO ZOOM ─────────────────────────────────────────────────────────────
@@ -1491,10 +1527,10 @@ updateHintText();
           if (selItem) {
             const startSize = initialZoom._itemSize || selItem.size;
             const isText = selItem.type === 'text';
-            selItem.size = Math.round(Math.max(isText?4:10, Math.min(isText?120:400, startSize * scale)));
+            selItem.size = Math.round(Math.max(10, Math.min(isText?20:400, startSize * scale)));
             renderCanvas();
             const lbl = document.getElementById((isText?'txt':'logo')+'-size-lbl-'+selItem.id);
-            if (lbl) lbl.textContent = 'Size: '+selItem.size+'px';
+            if (lbl) lbl.textContent = 'Size: '+Math.round(iSize(selItem))+'px';
           }
         } else {
           // No item selected — zoom whiteboard
@@ -1516,6 +1552,12 @@ updateHintText();
 })();
 
 setTimeout(applyZoom, 100);
+
+// ── RERENDER ON RESIZE — % positions auto-scale ──────────────────────────────
+window.addEventListener('resize', () => {
+  applyZoom();
+  if (state.items.length > 0) renderCanvas();
+});
 </script>
 
 <script>
