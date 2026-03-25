@@ -1,3 +1,5 @@
+const zlib = require('zlib');
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
@@ -29,14 +31,22 @@ module.exports = async function handler(req, res) {
 
   const attachments = [];
 
+  // Gzip the SVG and send as .svg.gz
   if (svg) {
-    attachments.push({
-      filename: 'cap-design.svg',
-      content: svg,
-      content_type: 'image/svg+xml'
-    });
+    try {
+      const svgBuffer = Buffer.from(svg, 'base64');
+      const gzipped = zlib.gzipSync(svgBuffer);
+      attachments.push({
+        filename: 'cap-design.svg.gz',
+        content: gzipped.toString('base64'),
+        content_type: 'application/gzip'
+      });
+    } catch(e) {
+      console.error('SVG gzip error:', e);
+    }
   }
 
+  // Underbrim photo as-is
   if (underbrim_photo) {
     const match = underbrim_photo.match(/^data:([^;]+);base64,(.+)$/);
     if (match) {
