@@ -141,10 +141,10 @@ input,select,textarea{font-family:inherit}
   .section-label{font-size:9px}
   .part-label{font-size:11px}
   .part-sub{font-size:9px}
-  #panel{padding:6px 8px;gap:5px}
-  .btn-primary{padding:11px;font-size:12px}
+  #panel{padding:4px 6px;gap:4px}
+  .btn-primary{padding:9px;font-size:12px}
   .btn-secondary{font-size:10px;padding:5px 8px}
-  .text-input{padding:7px 8px;font-size:16px}
+  .text-input{padding:5px 8px;font-size:16px}
   select.text-input{font-size:14px}
   .shape-btn{padding:4px 6px}
   .shape-btn span{font-size:9px}
@@ -308,7 +308,7 @@ const state = {
   pickerTarget: null,
   newText: '',
   font: 'Arial',
-  tSize: 10,
+  tSize: 20,
   tColor: '#F74D24',
   bold: false,
   italic: false,
@@ -515,9 +515,10 @@ function renderTextPanel() {
           <select class="text-input" style="padding:7px 8px;font-size:12px" onchange="state.items.find(i=>i.id===${sel.id}).font=this.value;renderCanvas()">${fontOpts}</select>
         </div>
         <div>
-          <div class="field-label" id="txt-size-lbl-${sel.id}">Size: ${sel.sw!==undefined?Math.round(iSize(sel)):'--'}px</div>
-          <input type="range" min="10" max="20" value="${Math.round(iSize(sel))}" style="width:100%;accent-color:#C08B3D"
-            oninput="setISize(state.items.find(i=>i.id===${sel.id}),+this.value);renderCanvas();var l=document.getElementById('txt-size-lbl-${sel.id}');if(l)l.textContent='Size: '+this.value+'px';"/>
+          <div style="display:flex;gap:8px">
+            <button onclick="resizeItem(${sel.id},-1)" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid rgba(0,0,0,.15);background:rgba(255,255,255,0.7);font-size:18px;cursor:pointer;color:#47360B;font-weight:700">−</button>
+            <button onclick="resizeItem(${sel.id},1)" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid rgba(0,0,0,.15);background:rgba(255,255,255,0.7);font-size:18px;cursor:pointer;color:#47360B;font-weight:700">+</button>
+          </div>
         </div>
         <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap">
           <div>
@@ -578,8 +579,10 @@ function renderTextPanel() {
       <select id="font-select" class="text-input" style="padding:7px 8px;font-size:12px">${fontOptions}</select>
     </div>
     <div>
-      <div class="field-label">Size: ${state.tSize}px</div>
-      <input type="range" id="size-slider" min="10" max="20" value="${state.tSize}" style="width:100%;accent-color:#C08B3D"/>
+      <div style="display:flex;gap:8px">
+        <button onclick="state.tSize=Math.max(1,state.tSize-10);renderPanel()" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid rgba(0,0,0,.15);background:rgba(255,255,255,0.7);font-size:18px;cursor:pointer;color:#47360B;font-weight:700">−</button>
+        <button onclick="state.tSize=Math.min(400,state.tSize+10);renderPanel()" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid rgba(0,0,0,.15);background:rgba(255,255,255,0.7);font-size:18px;cursor:pointer;color:#47360B;font-weight:700">+</button>
+      </div>
     </div>
     <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap">
       <div>
@@ -618,12 +621,9 @@ function renderLogoPanel() {
       <div style="display:flex;align-items:center;gap:10px">
         <img src="${sel.src}" style="width:60px;height:48px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,0.5);padding:3px;border:1px solid rgba(0,0,0,.1)"/>
         <div style="flex:1">
-          <div class="field-label" id="logo-size-lbl-${sel.id}">Size: ${sel.sw!==undefined?Math.round(iSize(sel)):'--'}px</div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <button onclick="resizeItem(${sel.id},-1)" style="width:32px;height:32px;border-radius:8px;border:1.5px solid rgba(0,0,0,.15);background:rgba(255,255,255,0.7);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#47360B;font-weight:700">−</button>
-            <input type="range" min="20" max="300" value="${Math.round(iSize(sel))}" style="flex:1;accent-color:#47360B"
-              oninput="setISize(state.items.find(i=>i.id===${sel.id}),+this.value);renderCanvas();var l=document.getElementById('logo-size-lbl-${sel.id}');if(l)l.textContent='Size: '+this.value+'px';"/>
-            <button onclick="resizeItem(${sel.id},1)" style="width:32px;height:32px;border-radius:8px;border:1.5px solid rgba(0,0,0,.15);background:rgba(255,255,255,0.7);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#47360B;font-weight:700">+</button>
+          <div style="display:flex;gap:8px">
+            <button onclick="resizeItem(${sel.id},-1)" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid rgba(0,0,0,.15);background:rgba(255,255,255,0.7);font-size:18px;cursor:pointer;color:#47360B;font-weight:700">−</button>
+            <button onclick="resizeItem(${sel.id},1)" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid rgba(0,0,0,.15);background:rgba(255,255,255,0.7);font-size:18px;cursor:pointer;color:#47360B;font-weight:700">+</button>
           </div>
         </div>
       </div>
@@ -851,21 +851,21 @@ function renderOrderPanel() {
     <div class="section-label" style="margin-top:2px">Your Details</div>
     <div>
       <div class="field-label">Name *</div>
-      <input type="text" placeholder="Your name" value="${escHtml(state.form.name)}" class="text-input" oninput="state.form.name=this.value;renderPanel()"/>
+      <input type="text" placeholder="Your name" value="${escHtml(state.form.name)}" class="text-input" oninput="state.form.name=this.value;updateSubmitBtn()"/>
     </div>
     <div>
       <div class="field-label">Email *</div>
-      <input type="email" placeholder="your@email.com" value="${escHtml(state.form.email)}" class="text-input" oninput="state.form.email=this.value;renderPanel()"/>
+      <input type="email" placeholder="your@email.com" value="${escHtml(state.form.email)}" class="text-input" oninput="state.form.email=this.value;updateSubmitBtn()"/>
     </div>
     <div>
       <div class="field-label">Phone</div>
-      <input type="tel" placeholder="+61 4xx xxx xxx" value="${escHtml(state.form.phone)}" class="text-input" oninput="state.form.phone=this.value;renderPanel()"/>
+      <input type="tel" placeholder="+61 4xx xxx xxx" value="${escHtml(state.form.phone)}" class="text-input" oninput="state.form.phone=this.value"/>
     </div>
     <div>
       <div class="field-label">Notes</div>
       <textarea placeholder="Deadline, special requirements…" rows="3"
         class="text-input" style="resize:vertical"
-        oninput="state.form.notes=this.value;renderPanel()">${escHtml(state.form.notes)}</textarea>
+        oninput="state.form.notes=this.value">${escHtml(state.form.notes)}</textarea>
     </div>
     <button class="btn-primary" ${canSubmit&&!state.sending?'':'disabled'} onclick="submitOrder()">${state.sending?'⏳ Sending…':'🚀 Submit My Design'}</button>
     <div style="font-size:10px;color:#9A8A6A;text-align:center">We reply within 24 hours · Free shipping Australia-wide</div>
@@ -876,8 +876,7 @@ function bindPanelEvents() {
   const fontSel = document.getElementById('font-select');
   if (fontSel) fontSel.onchange = () => { state.font = fontSel.value; };
 
-  const sizeSl = document.getElementById('size-slider');
-  if (sizeSl) sizeSl.oninput = () => { state.tSize = +sizeSl.value; document.querySelector('.field-label') && renderPanel(); };
+
 
   const curveSl = document.getElementById('curve-slider');
   if (curveSl) curveSl.oninput = () => {
@@ -998,7 +997,7 @@ function getCompositeSVGString() {
       const fw = item.bold ? 'bold' : 'normal';
       const fs = item.italic ? 'italic' : 'normal';
       const svgFontSize = iSize(item) * scaleY;
-      const hasBg = item.textBg && item.textBg !== 'none';
+      const hasBg = item.textBg && item.textBg !== 'none' && item.textBg !== 'transparent' && item.textBg !== '';
       const pad = svgFontSize * 0.3;
       const rx = Math.min(pad, 4);
 
@@ -1013,7 +1012,42 @@ function getCompositeSVGString() {
     } else if (item.type === 'logo') {
       const svgW = iSize(item) * scaleX;
       const svgH = iSize(item) * scaleY;
-      overlayNodes += `<image href="${item.src}" x="${sx.toFixed(2)}" y="${sy.toFixed(2)}" width="${svgW.toFixed(2)}" height="${svgH.toFixed(2)}" preserveAspectRatio="xMidYMid meet"/>`;
+      if (item.src && item.src.startsWith('data:image/svg')) {
+        // Inline SVG — decode and embed as <g> with transform
+        try {
+          let raw = item.src;
+          let svgText = '';
+          if (raw.includes('base64,')) {
+            svgText = decodeURIComponent(escape(atob(raw.split('base64,')[1])));
+          } else {
+            svgText = decodeURIComponent(raw.split(',')[1]);
+          }
+          // Strip XML declaration and extract inner SVG content
+          svgText = svgText.replace(/<\?xml[^?]*\?>/g, '').trim();
+          // Get viewBox or width/height from the outer <svg> tag
+          const vbMatch = svgText.match(/viewBox=["']([^"']+)["']/);
+          const wMatch  = svgText.match(/width=["']([^"'%]+)["']/);
+          const hMatch  = svgText.match(/height=["']([^"'%]+)["']/);
+          let nW = wMatch  ? parseFloat(wMatch[1])  : 100;
+          let nH = hMatch  ? parseFloat(hMatch[1])  : 100;
+          if (vbMatch) {
+            const vb = vbMatch[1].split(/[\s,]+/);
+            nW = parseFloat(vb[2]) || nW;
+            nH = parseFloat(vb[3]) || nH;
+          }
+          const scW = svgW / nW;
+          const scH = svgH / nH;
+          // Extract inner content (between first > and last </svg>)
+          const innerMatch = svgText.match(/<svg[^>]*>([\s\S]*)<\/svg>/i);
+          const inner = innerMatch ? innerMatch[1] : svgText;
+          overlayNodes += `<g transform="translate(${sx.toFixed(2)},${sy.toFixed(2)}) scale(${scW.toFixed(6)},${scH.toFixed(6)})">${inner}</g>`;
+        } catch(e) {
+          // Fallback to image if parsing fails
+          overlayNodes += `<image href="${item.src}" x="${sx.toFixed(2)}" y="${sy.toFixed(2)}" width="${svgW.toFixed(2)}" height="${svgH.toFixed(2)}" preserveAspectRatio="xMidYMid meet"/>`;
+        }
+      } else {
+        overlayNodes += `<image href="${item.src}" x="${sx.toFixed(2)}" y="${sy.toFixed(2)}" width="${svgW.toFixed(2)}" height="${svgH.toFixed(2)}" preserveAspectRatio="xMidYMid meet"/>`;
+      }
     }
   });
 
@@ -1270,7 +1304,7 @@ function createDragItem(item) {
       const svg = makeCurvedTextSVG(item.text, item.font, iSize(item), item.color, item.bold, item.italic, curve, null);
       content.innerHTML = svg || '';
     } else {
-      const hasBg = item.textBg && item.textBg !== 'none';
+      const hasBg = item.textBg && item.textBg !== 'none' && item.textBg !== 'transparent' && item.textBg !== '';
       if (hasBg) {
         // Wrap in a bg div that hugs the text, then put text inside
         const bgWrap = document.createElement('div');
@@ -1368,13 +1402,8 @@ function createDragItem(item) {
       );
       const scale = dist / pinchStartDist;
       const isText = item.type === 'text';
-      const min = 10;
-      const max = isText ? 20 : 400;
-      item.size = Math.round(Math.max(min, Math.min(max, pinchStartSize * scale)));
+      item.size = Math.round(Math.max(1, Math.min(100, pinchStartSize * scale)));
       renderCanvas();
-      // update label if visible
-      const lbl = document.getElementById((isText?'txt':'logo')+'-size-lbl-'+item.id);
-      if (lbl) lbl.textContent = 'Size: '+item.size+'px';
     } else if (e.touches.length === 1) {
       moveItem(e.touches[0].clientX, e.touches[0].clientY);
     }
@@ -1383,6 +1412,13 @@ function createDragItem(item) {
   window.addEventListener('touchend', () => { drag = null; pinchStartDist = null; });
 
   return el;
+}
+
+function updateSubmitBtn() {
+  const btn = document.querySelector('#panel .btn-primary[onclick*="submitOrder"]');
+  if (!btn) return;
+  const canSubmit = !!(state.form.name && state.form.email);
+  btn.disabled = !canSubmit;
 }
 
 function deselectItem() {
@@ -1408,15 +1444,10 @@ function selectItem(id) {
 function resizeItem(id, dir) {
   const item = state.items.find(i=>i.id===id);
   if (!item) return;
-  const isText = item.type==='text';
-  const _cur = iSize(item); setISize(item, Math.max(10, Math.min(isText?20:400, _cur + (isText?1:5)*dir)));
+  const step = item.type==='text' ? 2 : 5;
+  const _cur = iSize(item);
+  setISize(item, Math.max(1, Math.min(100, _cur + step * dir)));
   renderCanvas();
-  // Update label + slider value without full renderPanel
-  const prefix = isText ? 'txt' : 'logo';
-  const lbl = document.getElementById(prefix+'-size-lbl-'+id);
-  if (lbl) lbl.textContent = 'Size: '+item.size+'px';
-  const sliders = document.querySelectorAll('input[type=range]');
-  sliders.forEach(s => { if (s.closest('[data-id="'+id+'"]') || (lbl && s.parentElement && s.parentElement.previousElementSibling === lbl.parentElement)) s.value = item.size; });
 }
 
 function recolorItem(id, color) {
@@ -1527,10 +1558,8 @@ updateHintText();
           if (selItem) {
             const startSize = initialZoom._itemSize || selItem.size;
             const isText = selItem.type === 'text';
-            selItem.size = Math.round(Math.max(10, Math.min(isText?20:400, startSize * scale)));
+            selItem.size = Math.round(Math.max(1, Math.min(100, startSize * scale)));
             renderCanvas();
-            const lbl = document.getElementById((isText?'txt':'logo')+'-size-lbl-'+selItem.id);
-            if (lbl) lbl.textContent = 'Size: '+Math.round(iSize(selItem))+'px';
           }
         } else {
           // No item selected — zoom whiteboard
