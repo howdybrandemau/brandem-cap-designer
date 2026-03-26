@@ -195,9 +195,6 @@ input,select,textarea{font-family:inherit}
       <div id="zoom-scroller">
         <div id="zoom-stage">
           <div id="whiteboard">
-            <div id="cap-svg-wrap"></div>
-            <div id="canvas-items"></div>
-            <div id="hint"><div id="hint-inner">Add text or a logo using the panel on the left</div></div>
             <div id="wm-bg" style="position:absolute;inset:0;pointer-events:none;user-select:none;z-index:0;overflow:hidden;border-radius:16px">
               <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
                 <defs>
@@ -211,6 +208,10 @@ input,select,textarea{font-family:inherit}
                 <rect width="100%" height="100%" fill="url(#wm-pat)"/>
               </svg>
             </div>
+            <div id="cap-svg-wrap"></div>
+            <div id="canvas-items"></div>
+            <div id="hint"><div id="hint-inner">Add text or a logo using the panel on the left</div></div>
+            
           </div>
         </div>
       </div>
@@ -772,7 +773,6 @@ function renderTextPanel() {
   return `
     ${selectedEditor}
     <div style="border-top:1.5px solid rgba(0,0,0,.1);margin:4px 0"></div>
-    <button onclick="state.selId=null;renderCanvas();renderPanel();setTimeout(()=>{var f=document.getElementById('add-text-form');if(f)f.style.display='';var i=document.getElementById('new-text-input');if(i)i.focus();},50)" style="width:100%;padding:8px;border-radius:8px;border:1.5px solid #47360B;background:#47360B;color:#FCD68A;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.5px;text-transform:uppercase">✚ Add ${sel?'Another':'New'} Text</button>
     <div id="add-text-form" style="${sel ? 'display:none' : ''}">
     <div class="section-label" style="margin-top:4px">Add new text</div>
     <textarea id="new-text-input" class="text-input" rows="2" placeholder="Type your text… (Enter for 2nd line)" maxlength="80" style="resize:none;line-height:1.4;text-align:center" oninput="limitLines(this,2);state.newText=this.value">${escHtml(state.newText)}</textarea>
@@ -1002,7 +1002,8 @@ function renderOrderPanel() {
       <div style="font-size:52px;margin-bottom:10px">🎉</div>
       <div style="font-size:18px;font-weight:800;color:#47360B;margin-bottom:6px">Design Sent!</div>
       <div style="color:#9A8A6A;font-size:12px;line-height:1.7">Your design has been emailed to the Brandem team.<br/>We'll reply within 24 hours.</div>
-      <button class="btn-primary" style="margin-top:16px" onclick="resetAll()">Start New Design</button>
+      <button class="btn-primary" style="margin-top:16px" onclick="saveDesignImage()">📥 Save Design as Image</button>
+      <button class="btn-secondary" style="margin-top:8px;width:100%" onclick="resetAll()">Start New Design</button>
     </div>
   `;
 
@@ -1404,18 +1405,27 @@ function submitOrder() {
   state.sending = true;
   renderPanel();
 
-  // Build SVG attachment — safely base64 encode, skip if too large
+  // Build SVG — encode in chunks to avoid slow character loop
   let svgB64 = '';
   try {
     const svgStr = getCompositeSVGString() || '';
-    // Use TextEncoder → Uint8Array → btoa to avoid charset issues
+    // Fast chunk-based base64 — avoids O(n²) string concat
     const bytes = new TextEncoder().encode(svgStr);
+    const CHUNK = 8192;
     let binary = '';
-    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-    const encoded = btoa(binary);
-    // Only attach if under 1.5MB encoded (keeps total payload well under Vercel's 4.5MB limit)
-    if (encoded.length < 1500000) svgB64 = encoded;
-  } catch(e) { console.warn('SVG encode error:', e); }
+    for (let i = 0; i < bytes.length; i += CHUNK) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+    }
+    svgB64 = btoa(binary);
+  } catch(e) { console.warn('SVG encode error:', e); svgB64 = ''; }
+
+  // Underbrim photo — send the base64 data only (strip the data: header)
+  let underbrimB64 = '';
+  let underbrimType = '';
+  if (state.underbrimPhoto) {
+    const m = state.underbrimPhoto.match(/^data:([^;]+);base64,(.+)$/);
+    if (m) { underbrimType = m[1]; underbrimB64 = m[2]; }
+  }
 
   const payload = {
     name:          f.name,
@@ -1428,8 +1438,9 @@ function submitOrder() {
     logos:         ll + ' logo(s)',
     extras:        extras,
     total:         totalOrder ? '$' + totalOrder.toFixed(2) : '—',
-    has_underbrim: !!state.underbrimPhoto,
     svg:           svgB64,
+    underbrim_b64: underbrimB64,
+    underbrim_type: underbrimType,
   };
 
   const controller = new AbortController();
@@ -1464,6 +1475,55 @@ function submitOrder() {
     alert(msg);
     renderPanel();
   });
+}
+
+function saveDesignImage() {
+  const svgStr = getCompositeSVGString();
+  if (!svgStr) { alert('Nothing to save yet!'); return; }
+
+  // Convert SVG → PNG via canvas
+  const scale = 2; // 2x for retina quality
+  const W = 1040 * scale;
+  const H = 520 * scale;
+
+  const blob = new Blob([svgStr], {type: 'image/svg+xml'});
+  const url  = URL.createObjectURL(blob);
+  const img  = new Image();
+
+  img.onload = function () {
+    const canvas = document.createElement('canvas');
+    canvas.width  = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    // White background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+    ctx.drawImage(img, 0, 0, W, H);
+    URL.revokeObjectURL(url);
+
+    canvas.toBlob(function(pngBlob) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(pngBlob);
+      a.download = 'brandem-cap-design.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }, 'image/png');
+  };
+
+  img.onerror = function() {
+    // Fallback: download as SVG if PNG conversion fails
+    const a = document.createElement('a');
+    a.href = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgStr)));
+    a.download = 'brandem-cap-design.svg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  img.src = url;
 }
 
 function resetAll() {
