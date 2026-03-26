@@ -11,9 +11,9 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Name and email are required' });
   }
 
-  const hasUnderbrim = !!(underbrim_b64 && underbrim_b64.length > 0);
+  const hasUnderbrim = !!(underbrim_b64 && underbrim_b64.length > 10);
 
-  const html = `
+  const emailHtml = `
     <h2 style="color:#47360B">New Cap Design Order 🧢</h2>
     <table style="font-family:sans-serif;font-size:14px;border-collapse:collapse;width:100%">
       <tr><td style="padding:8px;font-weight:bold;width:140px">Name</td><td style="padding:8px">${name}</td></tr>
@@ -34,63 +34,62 @@ module.exports = async function handler(req, res) {
     <p style="font-family:sans-serif;font-size:12px;color:#9A8A6A;margin-top:24px">Sent from brandem-cap-designer.vercel.app</p>
   `;
 
+  // Resend attachment format: { filename, content (base64 string), type (mime) }
   const attachments = [];
 
-  // SVG cap design
   if (svg && typeof svg === 'string' && svg.length > 10) {
     try {
       const buf = Buffer.from(svg, 'base64');
-      console.log('SVG decoded size:', buf.length, 'bytes');
+      console.log('SVG size:', buf.length, 'bytes');
       if (buf.length > 100) {
         attachments.push({
           filename: 'cap-design.svg',
-          content: svg,
-          content_type: 'image/svg+xml'
+          content:  svg,           // base64 string
+          type:     'image/svg+xml' // Resend uses "type" not "content_type"
         });
       }
     } catch(e) {
-      console.error('SVG attach error:', e.message);
+      console.error('SVG error:', e.message);
     }
   } else {
-    console.log('No SVG received, svg length:', svg ? svg.length : 0);
+    console.warn('No SVG received, length:', svg ? svg.length : 0);
   }
 
-  // Underbrim photo
-  if (underbrim_b64 && underbrim_b64.length > 10) {
+  if (hasUnderbrim) {
     try {
       const buf = Buffer.from(underbrim_b64, 'base64');
       console.log('Underbrim photo size:', buf.length, 'bytes');
       const mime = underbrim_type || 'image/jpeg';
-      const ext = mime.split('/')[1] || 'jpg';
+      const ext  = mime.split('/')[1] || 'jpg';
       attachments.push({
         filename: `underbrim-photo.${ext}`,
-        content: underbrim_b64,
-        content_type: mime
+        content:  underbrim_b64,   // base64 string
+        type:     mime             // Resend uses "type"
       });
     } catch(e) {
-      console.error('Underbrim attach error:', e.message);
+      console.error('Underbrim error:', e.message);
     }
   }
 
-  console.log('Sending email with', attachments.length, 'attachment(s)');
+  console.log('Attachments to send:', attachments.length);
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 20000);
+  const timeoutId  = setTimeout(() => controller.abort(), 20000);
 
   try {
     const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      signal: controller.signal,
+      method:  'POST',
+      signal:  controller.signal,
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type':  'application/json',
         'Authorization': `Bearer ${process.env.RESEND_API_KEY}`
       },
       body: JSON.stringify({
-        from: 'Brandem Cap Designer <howdy@brandemau.com>',
-        to: ['howdy@brandemau.com'],
-        reply_to: email,
-        subject: `New Cap Order — ${name} — ${qty} hats — ${total}`,
-        html,
+        from:        'Brandem Cap Designer <howdy@brandemau.com>',
+        to:          ['howdy@brandemau.com'],
+        reply_to:    email,
+        subject:     `New Cap Order — ${name} — ${qty} hats — ${total}`,
+        html:        emailHtml,
         attachments
       })
     });
@@ -103,7 +102,7 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ error: `Resend ${response.status}: ${responseText.slice(0, 300)}` });
     }
 
-    console.log('Email sent OK');
+    console.log('Email sent OK:', responseText.slice(0, 100));
     return res.status(200).json({ ok: true });
 
   } catch (err) {
