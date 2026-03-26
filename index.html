@@ -195,19 +195,22 @@ input,select,textarea{font-family:inherit}
       <div id="zoom-scroller">
         <div id="zoom-stage">
           <div id="whiteboard">
-            <div id="watermark" style="position:absolute;inset:0;pointer-events:none;user-select:none;z-index:0;overflow:hidden;border-radius:16px">
-              <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <pattern id="wm-pattern" x="0" y="0" width="110" height="44" patternUnits="userSpaceOnUse" patternTransform="rotate(-25)">
-                    <text x="4" y="18" font-family="'Black Han Sans', Arial Black, sans-serif" font-size="9" font-weight="900" letter-spacing="1.5" fill="#8B5E2A" opacity="0.09">BRANDEMAU.COM</text>
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#wm-pattern)"/>
-              </svg>
-            </div>
             <div id="cap-svg-wrap"></div>
             <div id="canvas-items"></div>
             <div id="hint"><div id="hint-inner">Add text or a logo using the panel on the left</div></div>
+            <div id="wm-bg" style="position:absolute;inset:0;pointer-events:none;user-select:none;z-index:0;overflow:hidden;border-radius:16px">
+              <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <pattern id="wm-pat" x="0" y="0" width="280" height="110" patternUnits="userSpaceOnUse" patternTransform="rotate(-20)">
+                    <text x="10" y="56" font-family="'Black Han Sans', Arial Black, sans-serif" font-size="22" font-weight="900" letter-spacing="3" fill="#8B5E2A" opacity="0.11">BRANDEMAU.COM</text>
+                  </pattern>
+                  <pattern id="wm-pat-sm" x="0" y="0" width="175" height="70" patternUnits="userSpaceOnUse" patternTransform="rotate(-20)">
+                    <text x="6" y="36" font-family="'Black Han Sans', Arial Black, sans-serif" font-size="14" font-weight="900" letter-spacing="2" fill="#8B5E2A" opacity="0.11">BRANDEMAU.COM</text>
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#wm-pat)"/>
+              </svg>
+            </div>
           </div>
         </div>
       </div>
@@ -356,12 +359,12 @@ const COLOURS = [
 const FONTS = ["Impact","Bebas Neue","Oswald","Barlow Condensed","Permanent Marker","Montserrat"];
 
 const CAP_PARTS = [
-  {id:"front",     label:"Front Panel", cssVar:"--cap-front",     def:"#d14257"},
+  {id:"front",     label:"Front Panel", cssVar:"--cap-front",     def:"#000000"},
   {id:"brim",      label:"Brim",        cssVar:"--cap-brim",      def:"#000000"},
-  {id:"stripe1",   label:"Stripe 1",    cssVar:"--cap-stripe1",   def:"#f0f1a2"},
-  {id:"stripe2",   label:"Stripe 2",    cssVar:"--cap-stripe2",   def:"#d14257"},
-  {id:"mesh",      label:"Mesh",        cssVar:"--cap-mesh",      def:"#888888"},
-  {id:"snap",      label:"Snap",        cssVar:"--cap-snap",      def:"#d14257"},
+  {id:"stripe1",   label:"Stripe 1",    cssVar:"--cap-stripe1",   def:"#ffffff"},
+  {id:"stripe2",   label:"Stripe 2",    cssVar:"--cap-stripe2",   def:"#000000"},
+  {id:"mesh",      label:"Mesh",        cssVar:"--cap-mesh",      def:"#46484d"},
+  {id:"snap",      label:"Snap",        cssVar:"--cap-snap",      def:"#000000"},
 ];
 // Button follows front; sandwich + underbrim follow brim — managed via renderCap()
 
@@ -1895,7 +1898,18 @@ setTimeout(applyZoom, 100);
 window.addEventListener('resize', () => {
   applyZoom();
   if (state.items.length > 0) renderCanvas();
+  updateWatermark();
 });
+function updateWatermark() {
+  const rect = document.getElementById('wm-bg');
+  if (!rect) return;
+  const isMobile = window.innerWidth < 700;
+  const svg = rect.querySelector('svg');
+  if (!svg) return;
+  const r = svg.querySelector('rect');
+  if (r) r.setAttribute('fill', isMobile ? 'url(#wm-pat-sm)' : 'url(#wm-pat)');
+}
+updateWatermark();
 </script>
 
 <script>
