@@ -198,6 +198,16 @@ input,select,textarea{font-family:inherit}
             <div id="cap-svg-wrap"></div>
             <div id="canvas-items"></div>
             <div id="hint"><div id="hint-inner">Add text or a logo using the panel on the left</div></div>
+            <div id="watermark" style="position:absolute;inset:0;pointer-events:none;user-select:none;z-index:5;overflow:hidden;border-radius:16px">
+              <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <pattern id="wm-pattern" x="0" y="0" width="110" height="44" patternUnits="userSpaceOnUse" patternTransform="rotate(-25)">
+                    <text x="4" y="18" font-family="'Black Han Sans', Arial Black, sans-serif" font-size="9" font-weight="900" letter-spacing="1.5" fill="#8B5E2A" opacity="0.18">BRANDEMAU.COM</text>
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#wm-pattern)"/>
+              </svg>
+            </div>
           </div>
         </div>
       </div>
@@ -285,56 +295,6 @@ const COLOURS = [
   {name:"CREAM #134",hex:"#e6d6c5"},{name:"BLACK",hex:"#000000"},
 ];
 
-const MESH_COLOURS = [
-  {name:"Blue #1",hex:"#2b496b"},
-  {name:"Navy Blue #2",hex:"#151d34"},
-  {name:"Grey #3",hex:"#46484d"},
-  {name:"Red #4",hex:"#a10b26"},
-  {name:"Teal Blue #5",hex:"#35a5b5"},
-  {name:"White #6",hex:"#ffffff"},
-  {name:"Black #7",hex:"#000000"},
-  {name:"Dark Navy #8",hex:"#111433"},
-  {name:"Blue #9",hex:"#008bbf"},
-  {name:"Brown #10",hex:"#733d24"},
-  {name:"Burgundy #11",hex:"#6c1221"},
-  {name:"Yellow #12",hex:"#f0e44f"},
-  {name:"Mustard Yellow #13",hex:"#fdbe1d"},
-  {name:"Yellow #14",hex:"#ffff7d"},
-  {name:"Green #15",hex:"#18a451"},
-  {name:"Olive Green #16",hex:"#777959"},
-  {name:"Beige #17",hex:"#dfd3bf"},
-  {name:"Ivory #18",hex:"#f3efec"},
-  {name:"Light Grey #19",hex:"#dfe1e5"},
-  {name:"Dark Teal #20",hex:"#0a606f"},
-  {name:"Neon Green #21",hex:"#a3ff74"},
-  {name:"Light Pink #22",hex:"#ffcbd6"},
-  {name:"Orange #23",hex:"#ff4819"},
-  {name:"Purple #24",hex:"#705da6"},
-  {name:"Hot Pink #25",hex:"#f91b7b"},
-  {name:"Coral #26",hex:"#fd7469"},
-  {name:"Sky Blue #27",hex:"#b6dfe6"},
-  {name:"Mint #28",hex:"#c2f1e0"},
-  {name:"Lilac #29",hex:"#c9bded"},
-  {name:"Royal Blue #30",hex:"#0038b1"},
-  {name:"Dark Green #31",hex:"#042c1a"},
-  {name:"Dark Purple #32",hex:"#3c2790"},
-  {name:"Dark Brown #33",hex:"#3e2c22"},
-  {name:"Blue #34",hex:"#82b5d6"},
-  {name:"Peach #35",hex:"#e9a595"},
-  {name:"Tan #37",hex:"#975a28"},
-  {name:"Green #38",hex:"#26763f"},
-  {name:"Old Gold #39",hex:"#efc569"},
-  {name:"Rust #40",hex:"#ab2a1d"},
-  {name:"Sand #41",hex:"#ffefcd"},
-  {name:"Dark Beige #42",hex:"#bfac8d"},
-  {name:"Maroon #43",hex:"#952136"},
-  {name:"Golden Brown #44",hex:"#c4a56e"},
-  {name:"Olive #45",hex:"#9db68e"},
-  {name:"Gold #46",hex:"#e2d38b"},
-  {name:"Dark Sage Grey #47",hex:"#727975"},
-  {name:"Lavender #48",hex:"#c9cef0"},
-];
-
 const FONTS = ["Arial","Impact","Montserrat"];
 
 const CAP_PARTS = [
@@ -342,11 +302,10 @@ const CAP_PARTS = [
   {id:"brim",      label:"Brim",        cssVar:"--cap-brim",      def:"#000000"},
   {id:"stripe1",   label:"Stripe 1",    cssVar:"--cap-stripe1",   def:"#f0f1a2"},
   {id:"stripe2",   label:"Stripe 2",    cssVar:"--cap-stripe2",   def:"#d14257"},
-  {id:"underbrim", label:"Under Brim",  cssVar:"--cap-underbrim", def:"#eeee4a"},
   {id:"mesh",      label:"Mesh",        cssVar:"--cap-mesh",      def:"#888888"},
   {id:"snap",      label:"Snap",        cssVar:"--cap-snap",      def:"#d14257"},
 ];
-// Button and sandwich always match brim — managed via renderCap()
+// Button follows front; sandwich + underbrim follow brim — managed via renderCap()
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 const state = {
@@ -369,6 +328,9 @@ const state = {
   nextId: 1,
   zoom: 1,
   underbrimPhoto: null,
+  underbrimZoom: 1,    // 0.5 – 3
+  underbrimPanX: 0,    // offset in SVG units
+  underbrimPanY: 0,
 };
 
 // ── CAP SVG ───────────────────────────────────────────────────────────────────
@@ -380,18 +342,27 @@ function renderCap() {
   if (_renderingCap) return;
   _renderingCap = true;
   const wrap = document.getElementById('cap-svg-wrap');
-  // Button and sandwich always match brim
+  // Button follows front; sandwich + underbrim follow brim
+  const front = state.colours['front'];
   const brim = state.colours['brim'];
   let cssVars = CAP_PARTS.map(p => `${p.cssVar}:${state.colours[p.id]}`).join(';');
-  cssVars += `;--cap-button:${brim};--cap-sandwich:${brim}`;
+  cssVars += `;--cap-button:${front};--cap-sandwich:${brim};--cap-underbrim:${brim}`;
   // Inject mesh colour into the dot pattern so it colours the actual mesh, not just the background
   const meshColour = state.colours['mesh'] || '#888888';
   const dynDefs = DEFS.split('fill:#686868').join('fill:' + meshColour);
   const extraDefs = state.underbrimPhoto
     ? `<clipPath id="underbrim-photo-clip"><path d="${UNDERBRIM_PATH_D}" transform="${UNDERBRIM_TRANSFORM}"/></clipPath>`
     : '';
+  // Underbrim photo with pan+zoom applied via transform
+  // Base rect for underbrim area: x=210 y=65 w=52 h=40 (SVG viewBox units)
+  const _ubX = 210, _ubY = 65, _ubW = 52, _ubH = 40;
+  const _ubZ = state.underbrimZoom || 1;
+  const _ubCx = _ubX + _ubW / 2 + (state.underbrimPanX || 0);
+  const _ubCy = _ubY + _ubH / 2 + (state.underbrimPanY || 0);
+  const _ubIW = _ubW * _ubZ;
+  const _ubIH = _ubH * _ubZ;
   const photoImg = state.underbrimPhoto
-    ? `<image href="${state.underbrimPhoto}" x="210" y="65" width="52" height="40" preserveAspectRatio="xMidYMid slice" clip-path="url(#underbrim-photo-clip)" opacity="0.93"/>`
+    ? `<image href="${state.underbrimPhoto}" x="${(_ubCx - _ubIW/2).toFixed(2)}" y="${(_ubCy - _ubIH/2).toFixed(2)}" width="${_ubIW.toFixed(2)}" height="${_ubIH.toFixed(2)}" preserveAspectRatio="xMidYMid slice" clip-path="url(#underbrim-photo-clip)" opacity="0.93"/>`
     : '';
   wrap.innerHTML = `<svg viewBox="10 50 260 130" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="${cssVars};width:100%;height:100%;display:block">
     <defs>${dynDefs}${extraDefs}</defs>
@@ -434,7 +405,11 @@ function limitLines(el, max) {
   }
 }
 
-function colourName(hex) {
+function colourName(hex, partId) {
+  if (partId === 'mesh') {
+    const m = MESH_COLOURS.find(c => c.hex.toLowerCase() === hex.toLowerCase());
+    if (m) return m.name;
+  }
   const c = COLOURS.find(c => c.hex.toLowerCase() === hex.toLowerCase());
   return c ? c.name : hex;
 }
@@ -451,6 +426,55 @@ function openPicker(partId) {
   document.getElementById('picker-modal').style.display = 'flex';
   renderPickerGrid();
 }
+const MESH_COLOURS = [
+  {name:"White #6",hex:"#ffffff"},
+  {name:"Ivory #18",hex:"#f3efec"},
+  {name:"Beige #17",hex:"#dfd3bf"},
+  {name:"Dark Beige #42",hex:"#bfac8d"},
+  {name:"Sand #41",hex:"#ffefcd"},
+  {name:"Peach #35",hex:"#e9a595"},
+  {name:"Light Pink #22",hex:"#ffcbd6"},
+  {name:"Hot Pink #25",hex:"#f91b7b"},
+  {name:"Coral #26",hex:"#fd7469"},
+  {name:"Orange #23",hex:"#ff4819"},
+  {name:"Red #4",hex:"#a10b26"},
+  {name:"Maroon #43",hex:"#952136"},
+  {name:"Rust #40",hex:"#ab2a1d"},
+  {name:"Burgundy #11",hex:"#6c1221"},
+  {name:"Yellow #12",hex:"#f0e44f"},
+  {name:"Mustard Yellow #13",hex:"#fdbe1d"},
+  {name:"Old Gold #39",hex:"#efc569"},
+  {name:"Gold #46",hex:"#e2d38b"},
+  {name:"Golden Brown #44",hex:"#c4a56e"},
+  {name:"Tan #37",hex:"#975a28"},
+  {name:"Brown #10",hex:"#733d24"},
+  {name:"Dark Brown #33",hex:"#3e2c22"},
+  {name:"Neon Green #21",hex:"#a3ff74"},
+  {name:"Green #15",hex:"#18a451"},
+  {name:"Green #38",hex:"#26763f"},
+  {name:"Olive #45",hex:"#9db68e"},
+  {name:"Olive Green #16",hex:"#777959"},
+  {name:"Dark Sage Grey #47",hex:"#727975"},
+  {name:"Mint #28",hex:"#c2f1e0"},
+  {name:"Dark Green #31",hex:"#042c1a"},
+  {name:"Sky Blue #27",hex:"#b6dfe6"},
+  {name:"Blue #34",hex:"#82b5d6"},
+  {name:"Blue #9",hex:"#008bbf"},
+  {name:"Blue #1",hex:"#2b496b"},
+  {name:"Royal Blue #30",hex:"#0038b1"},
+  {name:"Teal Blue #5",hex:"#35a5b5"},
+  {name:"Dark Teal #20",hex:"#0a606f"},
+  {name:"Navy Blue #2",hex:"#151d34"},
+  {name:"Dark Navy #8",hex:"#111433"},
+  {name:"Lavender #48",hex:"#c9cef0"},
+  {name:"Lilac #29",hex:"#c9bded"},
+  {name:"Purple #24",hex:"#705da6"},
+  {name:"Dark Purple #32",hex:"#3c2790"},
+  {name:"Light Grey #19",hex:"#dfe1e5"},
+  {name:"Grey #3",hex:"#46484d"},
+  {name:"Black #7",hex:"#000000"},
+];
+
 
 function closePicker() {
   document.getElementById('picker-modal').style.display = 'none';
@@ -459,15 +483,40 @@ function closePicker() {
 
 function renderPickerGrid() {
   const q = document.getElementById('picker-search').value.toLowerCase();
-  const source = pickerPartId === 'mesh' ? MESH_COLOURS : COLOURS;
-  const list = source.filter(c => c.name.toLowerCase().includes(q) || c.hex.includes(q));
+  const isMesh = pickerPartId === 'mesh';
+  const palette = isMesh ? MESH_COLOURS : COLOURS;
+  const list = palette.filter(c => c.name.toLowerCase().includes(q) || c.hex.includes(q));
   const cur = pickerPartId ? state.colours[pickerPartId] : '';
-  document.getElementById('picker-grid').innerHTML = list.map(c => `
-    <button class="colour-swatch${c.hex.toLowerCase()===cur.toLowerCase()?' selected':''}"
+  const grid = document.getElementById('picker-grid');
+
+  if (isMesh) {
+    // Mesh: named swatches with visible label + number
+    grid.style.gridTemplateColumns = 'repeat(5, 1fr)';
+    grid.style.gap = '10px 6px';
+    grid.innerHTML = list.map(c => {
+      const sel = c.hex.toLowerCase() === cur.toLowerCase();
+      const isWhite = c.hex === '#ffffff';
+      const m = c.name.match(/^(.+?)\s*(#\d+)$/);
+      const label = m ? m[1] : c.name;
+      const num   = m ? m[2] : '';
+      return `<button onclick="pickColour('${c.hex}')" title="${c.name}"
+        style="background:none;border:none;cursor:pointer;padding:4px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;outline:none">
+        <span style="display:block;width:42px;height:42px;border-radius:50%;background:${c.hex};${isWhite ? 'box-shadow:inset 0 0 0 1.5px #ccc;' : ''}border:${sel ? '3px solid #F74D24' : '1.5px solid rgba(0,0,0,.12)'};transition:transform .12s;flex-shrink:0"></span>
+        <span style="font-size:9px;font-weight:700;color:#47360B;text-align:center;line-height:1.2;letter-spacing:.2px;text-transform:uppercase;max-width:54px;word-break:break-word;display:block">${label}</span>
+        <span style="font-size:9px;font-weight:400;color:#9A8A6A;line-height:1;display:block">${num}</span>
+      </button>`;
+    }).join('');
+  } else {
+    // Standard: compact 10-column grid
+    grid.style.gridTemplateColumns = 'repeat(10, 1fr)';
+    grid.style.gap = '4px';
+    grid.innerHTML = list.map(c => `<button class="colour-swatch${c.hex.toLowerCase()===cur.toLowerCase()?' selected':''}"
       style="background:${c.hex};${c.hex==='#ffffff'?'box-shadow:inset 0 0 0 1px #ccc':''}"
-      title="${c.name}" onclick="pickColour('${c.hex}')"></button>
-  `).join('');
-  const pc = document.getElementById('picker-count'); if(pc) pc.textContent = list.length + ' colours';
+      title="${c.name}" onclick="pickColour('${c.hex}')"></button>`).join('');
+  }
+
+  const pc = document.getElementById('picker-count');
+  if (pc) pc.textContent = list.length + ' colours' + (isMesh ? ' · mesh only' : '');
 }
 
 function pickColour(hex) {
@@ -527,7 +576,7 @@ function renderColoursPanel() {
       <div class="part-swatch" style="background:${state.colours[p.id]}"></div>
       <div style="flex:1;min-width:0">
         <div class="part-label">${p.label}</div>
-        <div class="part-color-name">${colourName(state.colours[p.id])}</div>
+        <div class="part-color-name">${colourName(state.colours[p.id], p.id)}</div>
       </div>
       <div class="part-arrow">›</div>
     </div>
@@ -736,7 +785,49 @@ function renderUnderbrimPanel() {
       }
     </div>
     ${hasPhoto ? `
-      <img class="underbrim-preview" src="${state.underbrimPhoto}" alt="Underbrim photo"/>
+      <div class="section-label" style="margin-top:6px">Adjust photo</div>
+
+      <div style="background:#fff;border-radius:10px;padding:10px 12px;border:1.5px solid #D4CFC0;display:flex;flex-direction:column;gap:10px">
+
+        <div>
+          <div class="field-label" style="margin-bottom:6px">Zoom</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button onclick="adjustUnderbrim('zoom',-1)" style="width:36px;height:36px;border-radius:8px;border:1.5px solid #D4CFC0;background:#fff;font-size:20px;font-weight:700;color:#47360B;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">−</button>
+            <div style="flex:1;height:4px;background:#EAE9E1;border-radius:2px;position:relative;cursor:pointer" onclick="adjustUnderbrimSlider('zoom',event,this)">
+              <div style="position:absolute;left:0;top:0;height:4px;background:#C08B3D;border-radius:2px;width:${Math.round(((state.underbrimZoom||1)-0.5)/2.5*100)}%"></div>
+              <div style="position:absolute;top:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#C08B3D;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2);left:${Math.round(((state.underbrimZoom||1)-0.5)/2.5*100)}%"></div>
+            </div>
+            <button onclick="adjustUnderbrim('zoom',1)" style="width:36px;height:36px;border-radius:8px;border:1.5px solid #D4CFC0;background:#fff;font-size:20px;font-weight:700;color:#47360B;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">+</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="field-label" style="margin-bottom:6px">Move left / right</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button onclick="adjustUnderbrim('panX',-1)" style="width:36px;height:36px;border-radius:8px;border:1.5px solid #D4CFC0;background:#fff;font-size:18px;font-weight:700;color:#47360B;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">←</button>
+            <div style="flex:1;height:4px;background:#EAE9E1;border-radius:2px;position:relative;cursor:pointer" onclick="adjustUnderbrimSlider('panX',event,this)">
+              <div style="position:absolute;left:0;top:0;height:4px;background:#C08B3D;border-radius:2px;width:${Math.round(((state.underbrimPanX||0)+20)/40*100)}%"></div>
+              <div style="position:absolute;top:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#C08B3D;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2);left:${Math.round(((state.underbrimPanX||0)+20)/40*100)}%"></div>
+            </div>
+            <button onclick="adjustUnderbrim('panX',1)" style="width:36px;height:36px;border-radius:8px;border:1.5px solid #D4CFC0;background:#fff;font-size:18px;font-weight:700;color:#47360B;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">→</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="field-label" style="margin-bottom:6px">Move up / down</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button onclick="adjustUnderbrim('panY',-1)" style="width:36px;height:36px;border-radius:8px;border:1.5px solid #D4CFC0;background:#fff;font-size:18px;font-weight:700;color:#47360B;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">↑</button>
+            <div style="flex:1;height:4px;background:#EAE9E1;border-radius:2px;position:relative;cursor:pointer" onclick="adjustUnderbrimSlider('panY',event,this)">
+              <div style="position:absolute;left:0;top:0;height:4px;background:#C08B3D;border-radius:2px;width:${Math.round(((state.underbrimPanY||0)+15)/30*100)}%"></div>
+              <div style="position:absolute;top:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#C08B3D;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2);left:${Math.round(((state.underbrimPanY||0)+15)/30*100)}%"></div>
+            </div>
+            <button onclick="adjustUnderbrim('panY',1)" style="width:36px;height:36px;border-radius:8px;border:1.5px solid #D4CFC0;background:#fff;font-size:18px;font-weight:700;color:#47360B;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">↓</button>
+          </div>
+        </div>
+
+        <button onclick="resetUnderbrimAdjust()" style="background:rgba(255,255,255,0.7);border:1.5px solid #D4CFC0;border-radius:8px;color:#9A8A6A;font-size:11px;font-weight:700;padding:6px;cursor:pointer;width:100%">↺ Reset position</button>
+      </div>
+
       <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="removeUnderbrimPhoto()">✕ Remove Photo</button>
     ` : ''}
     <div style="background:#fff;border-radius:10px;padding:10px 12px;border:1.5px solid #D4CFC0;margin-top:4px">
@@ -768,6 +859,39 @@ function handleUnderbrimDrop(e) {
 function removeUnderbrimPhoto() {
   state.underbrimPhoto = null;
   state.form.wantUnderbrim = false;
+  state.underbrimZoom = 1;
+  state.underbrimPanX = 0;
+  state.underbrimPanY = 0;
+  renderCap();
+  renderPanel();
+}
+
+function adjustUnderbrim(axis, dir) {
+  if (axis === 'zoom') {
+    state.underbrimZoom = Math.max(0.5, Math.min(3, (state.underbrimZoom || 1) + dir * 0.15));
+  } else if (axis === 'panX') {
+    state.underbrimPanX = Math.max(-20, Math.min(20, (state.underbrimPanX || 0) + dir * 2));
+  } else if (axis === 'panY') {
+    state.underbrimPanY = Math.max(-15, Math.min(15, (state.underbrimPanY || 0) + dir * 2));
+  }
+  renderCap();
+  renderPanel();
+}
+
+function adjustUnderbrimSlider(axis, e, el) {
+  const rect = el.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  if (axis === 'zoom')  state.underbrimZoom = 0.5 + pct * 2.5;
+  if (axis === 'panX')  state.underbrimPanX = -20 + pct * 40;
+  if (axis === 'panY')  state.underbrimPanY = -15 + pct * 30;
+  renderCap();
+  renderPanel();
+}
+
+function resetUnderbrimAdjust() {
+  state.underbrimZoom = 1;
+  state.underbrimPanX = 0;
+  state.underbrimPanY = 0;
   renderCap();
   renderPanel();
 }
@@ -854,13 +978,18 @@ function renderOrderPanel() {
   const qtyNum = parseInt(state.form.qty) || 0;
   const qtyValid = qtyNum >= 25 && qtyNum % 25 === 0;
 
-  const canSubmit = !!(state.form.name && state.form.email);
+  const canSubmit = !!(state.form.name && state.form.email && qtyValid);
   const qtyWarn = qtyNum > 0 && (!qtyValid);
   const qtyWarnMsg = qtyNum > 0 && qtyNum < 25
     ? '⚠️ Minimum order is 25 hats'
     : qtyNum % 25 !== 0 && qtyNum > 0
     ? `⚠️ Orders are in multiples of 25 — try ${Math.round(qtyNum/25)*25}`
     : '';
+  const missingItems = [];
+  if (!qtyValid) missingItems.push('quantity');
+  if (!state.form.name) missingItems.push('name');
+  if (!state.form.email) missingItems.push('email');
+  const submitLabel = state.sending ? '⏳ Sending…' : canSubmit ? '🚀 Submit My Design' : `Complete: ${missingItems.join(', ')}`;
 
   return `
     <div>
@@ -920,7 +1049,7 @@ function renderOrderPanel() {
         class="text-input" style="resize:vertical"
         oninput="state.form.notes=this.value">${escHtml(state.form.notes)}</textarea>
     </div>
-    <button class="btn-primary" ${canSubmit&&!state.sending?'':'disabled'} onclick="submitOrder()">${state.sending?'⏳ Sending…':'🚀 Submit My Design'}</button>
+    <button class="btn-primary" ${canSubmit&&!state.sending?'':'disabled'} onclick="submitOrder()">${submitLabel}</button>
     <div style="font-size:10px;color:#9A8A6A;text-align:center">We reply within 24 hours · Free shipping Australia-wide</div>
   `;
 }
@@ -1151,13 +1280,9 @@ function getSVGDataURL() {
 
 function submitOrder() {
   const qtyCheck = parseInt(state.form.qty) || 0;
-  if (!qtyCheck || qtyCheck < 25 || qtyCheck % 25 !== 0) {
-    alert('Please select a valid quantity (multiples of 25, minimum 25) in the Order tab.');
-    switchTab('order');
-    return;
-  }
-  const cl = CAP_PARTS.map(p=>`${p.label}: ${colourName(state.colours[p.id])} (${state.colours[p.id]})`).join('\n');
-  const tl = state.items.filter(i=>i.type==='text').map(i=>`"${i.text}" | ${i.font} | ${i.size}px | ${i.color}`).join('\n') || 'None';
+  if (!state.form.name || !state.form.email || !qtyCheck || qtyCheck < 25) return;
+  const cl = CAP_PARTS.map(p=>`${p.label}: ${colourName(state.colours[p.id], p.id)} (${state.colours[p.id]})`).join('\n');
+  const tl = state.items.filter(i=>i.type==='text').map(i=>`"${i.text}" | ${i.font} | ${i.color}`).join('\n') || 'None';
   const ll = state.items.filter(i=>i.type==='logo').length;
   const f = state.form;
   const sideTags = 0;
@@ -1486,8 +1611,15 @@ function createDragItem(item) {
 function updateSubmitBtn() {
   const btn = document.querySelector('#panel .btn-primary[onclick*="submitOrder"]');
   if (!btn) return;
-  const canSubmit = !!(state.form.name && state.form.email);
+  const qtyNum = parseInt(state.form.qty) || 0;
+  const qtyValid = qtyNum >= 25 && qtyNum % 25 === 0;
+  const canSubmit = !!(state.form.name && state.form.email && qtyValid);
   btn.disabled = !canSubmit;
+  const missing = [];
+  if (!qtyValid) missing.push('quantity');
+  if (!state.form.name) missing.push('name');
+  if (!state.form.email) missing.push('email');
+  btn.textContent = canSubmit ? '🚀 Submit My Design' : `Complete: ${missing.join(', ')}`;
 }
 
 function deselectItem() {
