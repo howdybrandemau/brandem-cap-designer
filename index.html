@@ -285,10 +285,59 @@ const COLOURS = [
   {name:"CREAM #134",hex:"#e6d6c5"},{name:"BLACK",hex:"#000000"},
 ];
 
+const MESH_COLOURS = [
+  {name:"Blue #1",hex:"#2b496b"},
+  {name:"Navy Blue #2",hex:"#151d34"},
+  {name:"Grey #3",hex:"#46484d"},
+  {name:"Red #4",hex:"#a10b26"},
+  {name:"Teal Blue #5",hex:"#35a5b5"},
+  {name:"White #6",hex:"#ffffff"},
+  {name:"Black #7",hex:"#000000"},
+  {name:"Dark Navy #8",hex:"#111433"},
+  {name:"Blue #9",hex:"#008bbf"},
+  {name:"Brown #10",hex:"#733d24"},
+  {name:"Burgundy #11",hex:"#6c1221"},
+  {name:"Yellow #12",hex:"#f0e44f"},
+  {name:"Mustard Yellow #13",hex:"#fdbe1d"},
+  {name:"Yellow #14",hex:"#ffff7d"},
+  {name:"Green #15",hex:"#18a451"},
+  {name:"Olive Green #16",hex:"#777959"},
+  {name:"Beige #17",hex:"#dfd3bf"},
+  {name:"Ivory #18",hex:"#f3efec"},
+  {name:"Light Grey #19",hex:"#dfe1e5"},
+  {name:"Dark Teal #20",hex:"#0a606f"},
+  {name:"Neon Green #21",hex:"#a3ff74"},
+  {name:"Light Pink #22",hex:"#ffcbd6"},
+  {name:"Orange #23",hex:"#ff4819"},
+  {name:"Purple #24",hex:"#705da6"},
+  {name:"Hot Pink #25",hex:"#f91b7b"},
+  {name:"Coral #26",hex:"#fd7469"},
+  {name:"Sky Blue #27",hex:"#b6dfe6"},
+  {name:"Mint #28",hex:"#c2f1e0"},
+  {name:"Lilac #29",hex:"#c9bded"},
+  {name:"Royal Blue #30",hex:"#0038b1"},
+  {name:"Dark Green #31",hex:"#042c1a"},
+  {name:"Dark Purple #32",hex:"#3c2790"},
+  {name:"Dark Brown #33",hex:"#3e2c22"},
+  {name:"Blue #34",hex:"#82b5d6"},
+  {name:"Peach #35",hex:"#e9a595"},
+  {name:"Tan #37",hex:"#975a28"},
+  {name:"Green #38",hex:"#26763f"},
+  {name:"Old Gold #39",hex:"#efc569"},
+  {name:"Rust #40",hex:"#ab2a1d"},
+  {name:"Sand #41",hex:"#ffefcd"},
+  {name:"Dark Beige #42",hex:"#bfac8d"},
+  {name:"Maroon #43",hex:"#952136"},
+  {name:"Golden Brown #44",hex:"#c4a56e"},
+  {name:"Olive #45",hex:"#9db68e"},
+  {name:"Gold #46",hex:"#e2d38b"},
+  {name:"Dark Sage Grey #47",hex:"#727975"},
+  {name:"Lavender #48",hex:"#c9cef0"},
+];
+
 const FONTS = ["Arial","Impact","Montserrat"];
 
 const CAP_PARTS = [
-  {id:"button",    label:"Button",       cssVar:"--cap-button",    def:"#d14257"},
   {id:"front",     label:"Front Panel", cssVar:"--cap-front",     def:"#d14257"},
   {id:"brim",      label:"Brim",        cssVar:"--cap-brim",      def:"#000000"},
   {id:"stripe1",   label:"Stripe 1",    cssVar:"--cap-stripe1",   def:"#f0f1a2"},
@@ -296,8 +345,8 @@ const CAP_PARTS = [
   {id:"underbrim", label:"Under Brim",  cssVar:"--cap-underbrim", def:"#eeee4a"},
   {id:"mesh",      label:"Mesh",        cssVar:"--cap-mesh",      def:"#888888"},
   {id:"snap",      label:"Snap",        cssVar:"--cap-snap",      def:"#d14257"},
-  {id:"sandwich",  label:"Sandwich",    cssVar:"--cap-sandwich",  def:"#000000"},
 ];
+// Button and sandwich always match brim — managed via renderCap()
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 const state = {
@@ -331,7 +380,10 @@ function renderCap() {
   if (_renderingCap) return;
   _renderingCap = true;
   const wrap = document.getElementById('cap-svg-wrap');
-  const cssVars = CAP_PARTS.map(p => `${p.cssVar}:${state.colours[p.id]}`).join(';');
+  // Button and sandwich always match brim
+  const brim = state.colours['brim'];
+  let cssVars = CAP_PARTS.map(p => `${p.cssVar}:${state.colours[p.id]}`).join(';');
+  cssVars += `;--cap-button:${brim};--cap-sandwich:${brim}`;
   // Inject mesh colour into the dot pattern so it colours the actual mesh, not just the background
   const meshColour = state.colours['mesh'] || '#888888';
   const dynDefs = DEFS.split('fill:#686868').join('fill:' + meshColour);
@@ -407,7 +459,8 @@ function closePicker() {
 
 function renderPickerGrid() {
   const q = document.getElementById('picker-search').value.toLowerCase();
-  const list = COLOURS.filter(c => c.name.toLowerCase().includes(q) || c.hex.includes(q));
+  const source = pickerPartId === 'mesh' ? MESH_COLOURS : COLOURS;
+  const list = source.filter(c => c.name.toLowerCase().includes(q) || c.hex.includes(q));
   const cur = pickerPartId ? state.colours[pickerPartId] : '';
   document.getElementById('picker-grid').innerHTML = list.map(c => `
     <button class="colour-swatch${c.hex.toLowerCase()===cur.toLowerCase()?' selected':''}"
@@ -1128,9 +1181,20 @@ function submitOrder() {
   state.sending = true;
   renderPanel();
 
+  // Build payload — cap SVG size can be large so we only include it if reasonable
+  let svgB64 = '';
+  try {
+    const svgStr = getCompositeSVGString() || '';
+    svgB64 = btoa(unescape(encodeURIComponent(svgStr)));
+  } catch(e) { svgB64 = ''; }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 28000);
+
   fetch('/api/order', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
+    signal: controller.signal,
     body: JSON.stringify({
       name:          f.name,
       email:         f.email,
@@ -1142,12 +1206,13 @@ function submitOrder() {
       logos:         ll + ' logo(s)',
       extras:        extras,
       total:         totalOrder ? '$' + totalOrder.toFixed(2) : '—',
-      svg:           btoa(unescape(encodeURIComponent(getCompositeSVGString()||''))),
+      svg:           svgB64,
       underbrim_photo: state.underbrimPhoto || null,
     })
   })
   .then(r => r.json())
   .then(data => {
+    clearTimeout(timeoutId);
     state.sending = false;
     if (data.ok) {
       state.sent = true;
@@ -1156,9 +1221,13 @@ function submitOrder() {
     }
     renderPanel();
   })
-  .catch(() => {
+  .catch(err => {
+    clearTimeout(timeoutId);
     state.sending = false;
-    alert('Could not connect. Please email howdy@brandemau.com directly.');
+    const msg = err.name === 'AbortError'
+      ? 'Request timed out — please try again or email howdy@brandemau.com directly.'
+      : 'Could not connect. Please try again or email howdy@brandemau.com directly.';
+    alert(msg);
     renderPanel();
   });
 }
@@ -1402,7 +1471,7 @@ function createDragItem(item) {
       );
       const scale = dist / pinchStartDist;
       const isText = item.type === 'text';
-      item.size = Math.round(Math.max(1, Math.min(100, pinchStartSize * scale)));
+      item.size = Math.round(Math.max(1, Math.min(item.type==='logo'?300:100, pinchStartSize * scale)));
       renderCanvas();
     } else if (e.touches.length === 1) {
       moveItem(e.touches[0].clientX, e.touches[0].clientY);
@@ -1444,9 +1513,11 @@ function selectItem(id) {
 function resizeItem(id, dir) {
   const item = state.items.find(i=>i.id===id);
   if (!item) return;
-  const step = item.type==='text' ? 2 : 5;
+  const isText = item.type === 'text';
+  const step = isText ? 2 : 12;
+  const maxSize = isText ? 100 : 300;
   const _cur = iSize(item);
-  setISize(item, Math.max(1, Math.min(100, _cur + step * dir)));
+  setISize(item, Math.max(1, Math.min(maxSize, _cur + step * dir)));
   renderCanvas();
 }
 
@@ -1558,7 +1629,7 @@ updateHintText();
           if (selItem) {
             const startSize = initialZoom._itemSize || selItem.size;
             const isText = selItem.type === 'text';
-            selItem.size = Math.round(Math.max(1, Math.min(100, startSize * scale)));
+            selItem.size = Math.round(Math.max(1, Math.min(selItem.type==='logo'?300:100, startSize * scale)));
             renderCanvas();
           }
         } else {
