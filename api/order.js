@@ -1,5 +1,3 @@
-const zlib = require('zlib');
-
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
@@ -31,22 +29,21 @@ module.exports = async function handler(req, res) {
 
   const attachments = [];
 
-  // Gzip the SVG and send as .svg.gz
+  // SVG — send as plain .svg (skip gzip, faster)
   if (svg) {
     try {
       const svgBuffer = Buffer.from(svg, 'base64');
-      const gzipped = zlib.gzipSync(svgBuffer);
-      attachments.push({
-        filename: 'cap-design.svg.gz',
-        content: gzipped.toString('base64'),
-        content_type: 'application/gzip'
-      });
-    } catch(e) {
-      console.error('SVG gzip error:', e);
-    }
+      if (svgBuffer.length < 3 * 1024 * 1024) {
+        attachments.push({
+          filename: 'cap-design.svg',
+          content: svg,
+          content_type: 'image/svg+xml'
+        });
+      }
+    } catch(e) { console.error('SVG attach error:', e); }
   }
 
-  // Underbrim photo as-is
+  // Underbrim photo
   if (underbrim_photo) {
     const match = underbrim_photo.match(/^data:([^;]+);base64,(.+)$/);
     if (match) {
@@ -59,28 +56,42 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.RESEND_API_KEY}`
-    },
-    body: JSON.stringify({
-      from: 'Brandem Cap Designer <howdy@brandemau.com>',
-      to: ['howdy@brandemau.com'],
-      reply_to: email,
-      subject: `New Cap Order — ${name} — ${qty} hats — ${total}`,
-      html,
-      attachments
-    })
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 25000);
 
-  if (!response.ok) {
-    const err = await response.text();
-    return res.status(500).json({ error: err });
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`
+      },
+      body: JSON.stringify({
+        from: 'Brandem Cap Designer <howdy@brandemau.com>',
+        to: ['howdy@brandemau.com'],
+        reply_to: email,
+        subject: `New Cap Order — ${name} — ${qty} hats — ${total}`,
+        html,
+        attachments
+      })
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const err = await response.text();
+      return res.status(500).json({ error: err });
+    }
+
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    clearTimeout(timeoutId);
+    console.error('Resend fetch error:', err);
+    return res.status(500).json({
+      error: err.name === 'AbortError' ? 'Email service timed out' : err.message
+    });
   }
-
-  return res.status(200).json({ ok: true });
 };
 
 module.exports.config = {
