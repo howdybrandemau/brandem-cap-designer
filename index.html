@@ -169,6 +169,7 @@ input,select,textarea{font-family:inherit}
   .tab-btn .tab-icon{font-size:20px;margin-bottom:0}
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 <div id="app">
@@ -1353,19 +1354,6 @@ ${capInner}
   return out;
 }
 
-function downloadSVGTest() {
-  const svgStr = getCompositeSVGString();
-  if (!svgStr) { alert('No design to download yet!'); return; }
-  const blob = new Blob([svgStr], {type:'image/svg+xml'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'brandem-cap-design.svg';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
 
 function getSVGString() {
   const svgEl = document.querySelector('#cap-svg-wrap svg');
@@ -1478,52 +1466,47 @@ function submitOrder() {
 }
 
 function saveDesignImage() {
-  const svgStr = getCompositeSVGString();
-  if (!svgStr) { alert('Nothing to save yet!'); return; }
+  const wb = document.getElementById('whiteboard');
+  if (!wb) { alert('Nothing to save yet!'); return; }
 
-  // Convert SVG → PNG via canvas
-  const scale = 2; // 2x for retina quality
-  const W = 1040 * scale;
-  const H = 520 * scale;
+  // Temporarily hide the hint and watermark for a clean screenshot
+  const hint = document.getElementById('hint');
+  const wm   = document.getElementById('wm-bg');
+  const hintWas = hint ? hint.style.display : '';
+  if (hint) hint.style.display = 'none';
+  if (wm)   wm.style.display   = 'none';
 
-  const blob = new Blob([svgStr], {type: 'image/svg+xml'});
-  const url  = URL.createObjectURL(blob);
-  const img  = new Image();
+  const btn = document.querySelector('#panel .btn-primary[onclick*="saveDesignImage"]');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving…'; }
 
-  img.onload = function () {
-    const canvas = document.createElement('canvas');
-    canvas.width  = W;
-    canvas.height = H;
-    const ctx = canvas.getContext('2d');
-    // White background
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, W, H);
-    ctx.drawImage(img, 0, 0, W, H);
-    URL.revokeObjectURL(url);
+  html2canvas(wb, {
+    scale: 2,
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: '#ffffff',
+    logging: false
+  }).then(function(canvas) {
+    // Restore hidden elements
+    if (hint) hint.style.display = hintWas;
+    if (wm)   wm.style.display   = '';
+    if (btn)  { btn.disabled = false; btn.textContent = '📥 Save Design as Image'; }
 
     canvas.toBlob(function(pngBlob) {
       const a = document.createElement('a');
       a.href = URL.createObjectURL(pngBlob);
-      a.download = 'brandem-cap-design.png';
+      a.download = 'my-brandem-cap.png';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    }, 'image/png');
-  };
-
-  img.onerror = function() {
-    // Fallback: download as SVG if PNG conversion fails
-    const a = document.createElement('a');
-    a.href = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgStr)));
-    a.download = 'brandem-cap-design.svg';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  img.src = url;
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    }, 'image/png', 0.95);
+  }).catch(function(err) {
+    if (hint) hint.style.display = hintWas;
+    if (wm)   wm.style.display   = '';
+    if (btn)  { btn.disabled = false; btn.textContent = '📥 Save Design as Image'; }
+    console.error('Screenshot failed:', err);
+    alert('Could not save image. Please take a screenshot manually.');
+  });
 }
 
 function resetAll() {
