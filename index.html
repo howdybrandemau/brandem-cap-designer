@@ -1355,21 +1355,11 @@ ${capInner}
 }
 
 
-function getSVGString() {
-  const svgEl = document.querySelector('#cap-svg-wrap svg');
-  if (!svgEl) return null;
-  return new XMLSerializer().serializeToString(svgEl);
-}
-
-function getSVGDataURL() {
-  const svgStr = getCompositeSVGString();
-  if (!svgStr) return null;
-  return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgStr)));
-}
 
 function submitOrder() {
   const qtyCheck = parseInt(state.form.qty) || 0;
   if (!state.form.name || !state.form.email || !qtyCheck || qtyCheck < 25) return;
+
   const cl = CAP_PARTS.map(p=>`${p.label}: ${colourName(state.colours[p.id], p.id)} (${state.colours[p.id]})`).join('\n');
   const tl = state.items.filter(i=>i.type==='text').map(i=>`"${i.text}" | ${i.font} | ${i.color}`).join('\n') || 'None';
   const ll = state.items.filter(i=>i.type==='logo').length;
@@ -1393,68 +1383,69 @@ function submitOrder() {
   state.sending = true;
   renderPanel();
 
-  // Build SVG — encode in chunks to avoid slow character loop
+  // ── 1. Encode SVG as base64 ─────────────────────────────────────────────
   let svgB64 = '';
   try {
     const svgStr = getCompositeSVGString() || '';
-    // Fast chunk-based base64 — avoids O(n²) string concat
-    const bytes = new TextEncoder().encode(svgStr);
-    const CHUNK = 8192;
-    let binary = '';
-    for (let i = 0; i < bytes.length; i += CHUNK) {
-      binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+    if (svgStr.length > 10) {
+      const bytes = new TextEncoder().encode(svgStr);
+      const CHUNK = 8192;
+      let binary = '';
+      for (let i = 0; i < bytes.length; i += CHUNK) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+      }
+      svgB64 = btoa(binary);
+      console.log('SVG encoded, length:', svgB64.length);
     }
-    svgB64 = btoa(binary);
-  } catch(e) { console.warn('SVG encode error:', e); svgB64 = ''; }
-
-  // Underbrim photo — send the base64 data only (strip the data: header)
-  let underbrimB64 = '';
-  let underbrimType = '';
-  if (state.underbrimPhoto) {
-    const m = state.underbrimPhoto.match(/^data:([^;]+);base64,(.+)$/);
-    if (m) { underbrimType = m[1]; underbrimB64 = m[2]; }
+  } catch(e) {
+    console.error('SVG encode error:', e);
   }
 
-  const payload = {
-    name:          f.name,
-    email:         f.email,
-    phone:         f.phone || '—',
-    qty:           f.qty || '—',
-    notes:         f.notes || '—',
-    colours:       cl,
-    text_elements: tl,
-    logos:         ll + ' logo(s)',
-    extras:        extras,
-    total:         totalOrder ? '$' + totalOrder.toFixed(2) : '—',
-    svg:           svgB64,
-    underbrim_b64: underbrimB64,
-    underbrim_type: underbrimType,
-  };
+  // ── 2. Underbrim photo ───────────────────────────────────────────────────
+  let underbrimB64 = '';
+  let underbrimExt = 'jpg';
+  if (state.underbrimPhoto) {
+    const m = state.underbrimPhoto.match(/^data:image\/([^;]+);base64,(.+)$/);
+    if (m) { underbrimExt = m[1]; underbrimB64 = m[2]; }
+    console.log('Underbrim encoded, length:', underbrimB64.length);
+  }
 
+  // ── 3. Send ───────────────────────────────────────────────────────────────
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 28000);
+  const timeoutId  = setTimeout(() => controller.abort(), 30000);
 
   fetch('/api/order', {
-    method: 'POST',
+    method:  'POST',
     headers: {'Content-Type': 'application/json'},
-    signal: controller.signal,
-    body: JSON.stringify(payload)
+    signal:  controller.signal,
+    body: JSON.stringify({
+      name:          f.name,
+      email:         f.email,
+      phone:         f.phone || '—',
+      qty:           f.qty   || '—',
+      notes:         f.notes || '—',
+      colours:       cl,
+      text_elements: tl,
+      logos:         ll + ' logo(s)',
+      extras:        extras,
+      total:         totalOrder ? '$' + totalOrder.toFixed(2) : '—',
+      svg_b64:       svgB64,
+      underbrim_b64: underbrimB64,
+      underbrim_ext: underbrimExt,
+    })
   })
-  .then(r => {
+  .then(function(r) {
     clearTimeout(timeoutId);
-    if (!r.ok) return r.text().then(t => { throw new Error('Server error: ' + r.status + ' ' + t.slice(0,200)); });
+    if (!r.ok) return r.text().then(function(t) { throw new Error('Server ' + r.status + ': ' + t.slice(0,200)); });
     return r.json();
   })
-  .then(data => {
+  .then(function(data) {
     state.sending = false;
-    if (data.ok) {
-      state.sent = true;
-    } else {
-      alert('Something went wrong. Please email howdy@brandemau.com directly.\n\n' + (data.error || ''));
-    }
+    if (data.ok) { state.sent = true; }
+    else { alert('Something went wrong. Please email howdy@brandemau.com directly.\n\n' + (data.error || '')); }
     renderPanel();
   })
-  .catch(err => {
+  .catch(function(err) {
     clearTimeout(timeoutId);
     state.sending = false;
     const msg = err.name === 'AbortError'
@@ -1466,32 +1457,40 @@ function submitOrder() {
 }
 
 function saveDesignImage() {
-  const wb = document.getElementById('whiteboard');
-  if (!wb) { alert('Nothing to save yet!'); return; }
-
-  // Temporarily hide the hint and watermark for a clean screenshot
-  const hint = document.getElementById('hint');
-  const wm   = document.getElementById('wm-bg');
-  const hintWas = hint ? hint.style.display : '';
-  if (hint) hint.style.display = 'none';
-  if (wm)   wm.style.display   = 'none';
-
   const btn = document.querySelector('#panel .btn-primary[onclick*="saveDesignImage"]');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving…'; }
 
-  html2canvas(wb, {
-    scale: 2,
-    useCORS: true,
-    allowTaint: true,
-    backgroundColor: '#ffffff',
-    logging: false
-  }).then(function(canvas) {
-    // Restore hidden elements
-    if (hint) hint.style.display = hintWas;
-    if (wm)   wm.style.display   = '';
-    if (btn)  { btn.disabled = false; btn.textContent = '📥 Save Design as Image'; }
+  function restoreBtn() {
+    if (btn) { btn.disabled = false; btn.textContent = '📥 Save Design as Image'; }
+  }
 
+  // Build the composite SVG string
+  const svgStr = getCompositeSVGString();
+  if (!svgStr) {
+    restoreBtn();
+    alert('Nothing to save yet!');
+    return;
+  }
+
+  // Draw SVG onto a canvas and export as PNG — never expose the SVG
+  const W = 1040, H = 520;
+  const canvas = document.createElement('canvas');
+  canvas.width  = W * 2; // 2x retina
+  canvas.height = H * 2;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.scale(2, 2);
+
+  const blob = new Blob([svgStr], {type: 'image/svg+xml;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const img  = new Image();
+
+  img.onload = function() {
+    ctx.drawImage(img, 0, 0, W, H);
+    URL.revokeObjectURL(url);
     canvas.toBlob(function(pngBlob) {
+      if (!pngBlob) { restoreBtn(); alert('Could not save image. Please take a screenshot manually.'); return; }
       const a = document.createElement('a');
       a.href = URL.createObjectURL(pngBlob);
       a.download = 'my-brandem-cap.png';
@@ -1499,14 +1498,17 @@ function saveDesignImage() {
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    }, 'image/png', 0.95);
-  }).catch(function(err) {
-    if (hint) hint.style.display = hintWas;
-    if (wm)   wm.style.display   = '';
-    if (btn)  { btn.disabled = false; btn.textContent = '📥 Save Design as Image'; }
-    console.error('Screenshot failed:', err);
+      restoreBtn();
+    }, 'image/png');
+  };
+
+  img.onerror = function() {
+    URL.revokeObjectURL(url);
+    restoreBtn();
     alert('Could not save image. Please take a screenshot manually.');
-  });
+  };
+
+  img.src = url;
 }
 
 function resetAll() {
