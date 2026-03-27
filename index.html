@@ -169,7 +169,6 @@ input,select,textarea{font-family:inherit}
   .tab-btn .tab-icon{font-size:20px;margin-bottom:0}
 }
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 <div id="app">
@@ -1003,7 +1002,6 @@ function renderOrderPanel() {
       <div style="font-size:52px;margin-bottom:10px">🎉</div>
       <div style="font-size:18px;font-weight:800;color:#47360B;margin-bottom:6px">Design Sent!</div>
       <div style="color:#9A8A6A;font-size:12px;line-height:1.7">Your design has been emailed to the Brandem team.<br/>We'll reply within 24 hours.</div>
-      <button class="btn-primary" style="margin-top:16px" onclick="saveDesignImage()">📥 Save Design as Image</button>
       <button class="btn-secondary" style="margin-top:8px;width:100%" onclick="resetAll()">Start New Design</button>
     </div>
   `;
@@ -1080,7 +1078,7 @@ function renderOrderPanel() {
   const qtyNum = parseInt(state.form.qty) || 0;
   const qtyValid = qtyNum >= 25 && qtyNum % 25 === 0;
 
-  const canSubmit = !!(state.form.name && state.form.email && qtyValid);
+  const canSubmit = !!(state.form.name && state.form.email && state.form.phone && qtyValid);
   const qtyWarn = qtyNum > 0 && (!qtyValid);
   const qtyWarnMsg = qtyNum > 0 && qtyNum < 25
     ? '⚠️ Minimum order is 25 hats'
@@ -1091,6 +1089,7 @@ function renderOrderPanel() {
   if (!qtyValid) missingItems.push('quantity');
   if (!state.form.name) missingItems.push('name');
   if (!state.form.email) missingItems.push('email');
+  if (!state.form.phone) missingItems.push('phone');
   const submitLabel = state.sending ? '⏳ Sending…' : canSubmit ? '🚀 Submit My Design' : `Complete: ${missingItems.join(', ')}`;
 
   return `
@@ -1142,8 +1141,8 @@ function renderOrderPanel() {
       <input type="email" placeholder="your@email.com" value="${escHtml(state.form.email)}" class="text-input" oninput="state.form.email=this.value;updateSubmitBtn()"/>
     </div>
     <div>
-      <div class="field-label">Phone</div>
-      <input type="tel" placeholder="+61 4xx xxx xxx" value="${escHtml(state.form.phone)}" class="text-input" oninput="state.form.phone=this.value"/>
+      <div class="field-label">Phone *</div>
+      <input type="tel" placeholder="+61 4xx xxx xxx" value="${escHtml(state.form.phone)}" class="text-input" oninput="state.form.phone=this.value;updateSubmitBtn()"/>
     </div>
     <div>
       <div class="field-label">Notes</div>
@@ -1456,60 +1455,6 @@ function submitOrder() {
   });
 }
 
-function saveDesignImage() {
-  const btn = document.querySelector('#panel .btn-primary[onclick*="saveDesignImage"]');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving…'; }
-
-  function restoreBtn() {
-    if (btn) { btn.disabled = false; btn.textContent = '📥 Save Design as Image'; }
-  }
-
-  // Build the composite SVG string
-  const svgStr = getCompositeSVGString();
-  if (!svgStr) {
-    restoreBtn();
-    alert('Nothing to save yet!');
-    return;
-  }
-
-  // Draw SVG onto a canvas and export as PNG — never expose the SVG
-  const W = 1040, H = 520;
-  const canvas = document.createElement('canvas');
-  canvas.width  = W * 2; // 2x retina
-  canvas.height = H * 2;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.scale(2, 2);
-
-  const blob = new Blob([svgStr], {type: 'image/svg+xml;charset=utf-8'});
-  const url  = URL.createObjectURL(blob);
-  const img  = new Image();
-
-  img.onload = function() {
-    ctx.drawImage(img, 0, 0, W, H);
-    URL.revokeObjectURL(url);
-    canvas.toBlob(function(pngBlob) {
-      if (!pngBlob) { restoreBtn(); alert('Could not save image. Please take a screenshot manually.'); return; }
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(pngBlob);
-      a.download = 'my-brandem-cap.png';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-      restoreBtn();
-    }, 'image/png');
-  };
-
-  img.onerror = function() {
-    URL.revokeObjectURL(url);
-    restoreBtn();
-    alert('Could not save image. Please take a screenshot manually.');
-  };
-
-  img.src = url;
-}
 
 function resetAll() {
   state.colours = Object.fromEntries(CAP_PARTS.map(p=>[p.id,p.def]));
@@ -1767,12 +1712,13 @@ function updateSubmitBtn() {
   if (!btn) return;
   const qtyNum = parseInt(state.form.qty) || 0;
   const qtyValid = qtyNum >= 25 && qtyNum % 25 === 0;
-  const canSubmit = !!(state.form.name && state.form.email && qtyValid);
+  const canSubmit = !!(state.form.name && state.form.email && state.form.phone && qtyValid);
   btn.disabled = !canSubmit;
   const missing = [];
   if (!qtyValid) missing.push('quantity');
   if (!state.form.name) missing.push('name');
   if (!state.form.email) missing.push('email');
+  if (!state.form.phone) missing.push('phone');
   btn.textContent = canSubmit ? '🚀 Submit My Design' : `Complete: ${missing.join(', ')}`;
 }
 
