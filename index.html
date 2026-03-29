@@ -1336,11 +1336,21 @@ function getCompositeSVGString() {
 
   // ── 5. Inline CSS vars as actual colours ──────────────────────────────────
   let capInner = new XMLSerializer().serializeToString(capSvg);
-  CAP_PARTS.forEach(p => {
-    const colour = state.colours[p.id];
-    const re = new RegExp('var\(' + p.cssVar.replace(/[-]/g,'\-') + '\)', 'g');
-    capInner = capInner.replace(re, colour);
+
+  // Replace all 9 CSS variables with real hex values
+  const allVars = [
+    ...CAP_PARTS.map(p => ({cssVar: p.cssVar, colour: state.colours[p.id]})),
+    {cssVar: '--cap-button',    colour: state.colours['front']},
+    {cssVar: '--cap-sandwich',  colour: state.colours['brim']},
+    {cssVar: '--cap-underbrim', colour: state.colours['brim']},
+  ];
+  allVars.forEach(function(v) {
+    // Escape hyphens for use inside RegExp
+    const escaped = v.cssVar.replace(/-/g, '\\-');
+    const re = new RegExp('var\\(' + escaped + '\\)', 'g');
+    capInner = capInner.replace(re, v.colour);
   });
+
   // Strip outer <svg> wrapper — we'll wrap in our own
   capInner = capInner.replace(/<svg[^>]*>/, '').replace(/<\/svg>$/, '');
 
