@@ -384,7 +384,7 @@ const state = {
   italic: false,
   tCurve: 0,
   tBg: 'none',
-  form: {name:'',email:'',phone:'',qty:'',notes:'',sideTags:0,wantUnderbrim:false},
+  form: {name:'',email:'',phone:'',qty:'',notes:'',sideTags:0,wantUnderbrim:false,sizes:{kids:0,women:0,men:0,xl:0},peak:'mid',fullFabric:false},
   sent: false,
   sending: false,
   nextId: 1,
@@ -426,8 +426,12 @@ function renderCap() {
   const photoImg = state.underbrimPhoto
     ? `<image href="${state.underbrimPhoto}" x="${(_ubCx - _ubIW/2).toFixed(2)}" y="${(_ubCy - _ubIH/2).toFixed(2)}" width="${_ubIW.toFixed(2)}" height="${_ubIH.toFixed(2)}" preserveAspectRatio="xMidYMid slice" clip-path="url(#underbrim-photo-clip)" opacity="0.93"/>`
     : '';
+  const fullFabricStyle = state.form.fullFabric
+    ? `<style>#mesh-bg{display:inline !important} #g30{display:none !important}</style>`
+    : '';
   wrap.innerHTML = `<svg viewBox="10 50 260 130" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="${cssVars};width:100%;height:100%;display:block">
     <defs>${dynDefs}${extraDefs}</defs>
+    ${fullFabricStyle}
     <g>${CAP_LAYERS}</g>
     ${photoImg}
   </svg>`;
@@ -545,7 +549,7 @@ function closePicker() {
 
 function renderPickerGrid() {
   const q = document.getElementById('picker-search').value.toLowerCase();
-  const isMesh = pickerPartId === 'mesh';
+  const isMesh = pickerPartId === 'mesh' && !state.form.fullFabric;
   const palette = isMesh ? MESH_COLOURS : COLOURS;
   const list = palette.filter(c => c.name.toLowerCase().includes(q) || c.hex.includes(q));
   const cur = pickerPartId ? state.colours[pickerPartId] : '';
@@ -643,7 +647,7 @@ function switchTab(tab) {
 function updateHeaderTotal() {
   const el = document.getElementById('hdr-total'); if(!el) return;
   if (!el) return;
-  const qty = parseInt(state.form.qty) || 0;
+  const qty = getTotalQty();
   const TIERS = [
     {min:25,max:49,price:30},{min:50,max:99,price:22},
     {min:100,max:199,price:18},{min:200,max:499,price:16},{min:500,max:Infinity,price:14}
@@ -672,7 +676,12 @@ function renderPanel() {
 }
 
 function renderColoursPanel() {
-  const rows = CAP_PARTS.map(p => `
+  const ff = state.form.fullFabric;
+  const parts = CAP_PARTS.map(p => {
+    if (p.id === 'mesh') return {...p, label: ff ? 'Side Panels (Fabric)' : 'Mesh'};
+    return p;
+  });
+  const rows = parts.map(p => `
     <div class="part-row" onclick="openPicker('${p.id}')">
       <div class="part-swatch" style="background:${state.colours[p.id]}"></div>
       <div style="flex:1;min-width:0">
@@ -684,6 +693,14 @@ function renderColoursPanel() {
   `).join('');
 
   return `
+    <div onclick="state.form.fullFabric=!state.form.fullFabric;renderPanel()" style="cursor:pointer;background:${ff?'#47360B':'#fff'};border:2px solid ${ff?'#47360B':'#D4CFC0'};border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;transition:all .15s;margin-bottom:2px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:700;color:${ff?'#FCD68A':'#47360B'}">🧢 Full Fabric Cap</div>
+      </div>
+      <div style="width:36px;height:20px;border-radius:10px;background:${ff?'#FCD68A':'#D4CFC0'};position:relative;flex-shrink:0;transition:background .15s">
+        <div style="position:absolute;top:3px;${ff?'right:3px':'left:3px'};width:14px;height:14px;border-radius:50%;background:${ff?'#47360B':'#fff'};box-shadow:0 1px 3px rgba(0,0,0,.2);transition:all .15s"></div>
+      </div>
+    </div>
     <div class="section-label">Tap a part to change colour</div>
     ${rows}
   `;
@@ -1016,7 +1033,7 @@ function renderOrderPanel() {
     </div>
   `).join('');
 
-  const qty = parseInt(state.form.qty) || 0;
+  const qty = getTotalQty();
   const sideTags = 0;
   const wantUnderbrim = !!state.underbrimPhoto;
   const TIERS = [
@@ -1075,16 +1092,12 @@ function renderOrderPanel() {
     </div>`;
 
   // Qty preset buttons 25,50,75...500
-  const qtyNum = parseInt(state.form.qty) || 0;
-  const qtyValid = qtyNum >= 25 && qtyNum % 25 === 0;
+  const qtyNum = qty;
+  const qtyValid = qty >= 25;
 
   const canSubmit = !!(state.form.name && state.form.email && state.form.phone && qtyValid);
-  const qtyWarn = qtyNum > 0 && (!qtyValid);
-  const qtyWarnMsg = qtyNum > 0 && qtyNum < 25
-    ? '⚠️ Minimum order is 25 hats'
-    : qtyNum % 25 !== 0 && qtyNum > 0
-    ? `⚠️ Orders are in multiples of 25 — try ${Math.round(qtyNum/25)*25}`
-    : '';
+  const qtyWarn = false;
+  const qtyWarnMsg = '';
   const missingItems = [];
   if (!qtyValid) missingItems.push('quantity');
   if (!state.form.name) missingItems.push('name');
@@ -1094,17 +1107,46 @@ function renderOrderPanel() {
 
   return `
     <div>
-      <div class="field-label" style="margin-bottom:8px">How many hats?</div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <button onclick="var q=Math.max(25,(parseInt(state.form.qty)||25)-25);state.form.qty=String(q);renderPanel()"
-          style="width:44px;height:44px;border-radius:10px;border:1.5px solid rgba(0,0,0,.15);background:rgba(255,255,255,0.7);color:#47360B;font-size:22px;font-weight:700;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center">−</button>
-        <div style="flex:1;text-align:center;font-size:26px;font-weight:800;color:${qtyNum>0?'#47360B':'#B8A070'};font-family:'Black Han Sans',sans-serif">
-          ${qtyNum > 0 ? qtyNum : '—'}
+      <div class="field-label" style="margin-bottom:8px">How many hats? <span style="font-weight:400;color:#9A8A6A">(multiples of 25 per size)</span></div>
+      <div style="background:#fff;border-radius:12px;border:1.5px solid #D4CFC0;overflow:hidden">
+        ${[
+          {key:'kids',  label:'Kids',  sub:'54cm'},
+          {key:'women', label:'Women', sub:'56cm'},
+          {key:'men',   label:'Men',   sub:'58cm'},
+          {key:'xl',    label:'XL',    sub:'61cm'},
+        ].map((s,i) => {
+          const v = state.form.sizes[s.key] || 0;
+          return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;${i>0?'border-top:1px solid #EAE9E1':''}">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:700;color:#47360B">${s.label}</div>
+              <div style="font-size:10px;color:#9A8A6A">${s.sub}</div>
+            </div>
+            <button onclick="state.form.sizes.${s.key}=Math.max(0,(state.form.sizes.${s.key}||0)-25);state.form.qty=String(getTotalQty());renderPanel()"
+              style="width:34px;height:34px;border-radius:8px;border:1.5px solid rgba(0,0,0,.15);background:rgba(244,243,236,0.8);color:#47360B;font-size:20px;font-weight:700;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;line-height:1">−</button>
+            <div style="min-width:36px;text-align:center;font-size:18px;font-weight:800;color:${v>0?'#47360B':'#C8C0AA'};font-family:'Black Han Sans',sans-serif">${v > 0 ? v : '—'}</div>
+            <button onclick="state.form.sizes.${s.key}=(state.form.sizes.${s.key}||0)+25;state.form.qty=String(getTotalQty());renderPanel()"
+              style="width:34px;height:34px;border-radius:8px;border:1.5px solid rgba(0,0,0,.15);background:rgba(244,243,236,0.8);color:#47360B;font-size:20px;font-weight:700;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;line-height:1">+</button>
+          </div>`;
+        }).join('')}
+        <div style="border-top:2px solid #EAE9E1;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;background:#F9F8F3">
+          <div style="font-size:11px;font-weight:700;color:#7A6030;letter-spacing:.5px;text-transform:uppercase">Total</div>
+          <div style="font-size:20px;font-weight:800;color:${qty>=25?'#47360B':'#B8A070'};font-family:'Black Han Sans',sans-serif">${qty > 0 ? qty + ' hats' : '—'}</div>
         </div>
-        <button onclick="var q=(parseInt(state.form.qty)||0)+25;state.form.qty=String(q);renderPanel()"
-          style="width:44px;height:44px;border-radius:10px;border:1.5px solid rgba(0,0,0,.15);background:rgba(255,255,255,0.7);color:#47360B;font-size:22px;font-weight:700;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center">+</button>
       </div>
-      <div style="font-size:10px;color:#7A6030;margin-top:6px;text-align:center">Tap + or − · Multiples of 25 · Minimum 25</div>
+      ${qty > 0 && qty < 25 ? `<div style="margin-top:6px;font-size:11px;color:#F74D24;font-weight:600;text-align:center">⚠️ Minimum order is 25 hats</div>` : ''}
+    </div>
+
+    <div>
+      <div class="field-label" style="margin-bottom:8px">Peak / Brim Height</div>
+      <div style="display:flex;gap:8px">
+        ${[{v:'mid',label:'Mid Peak',sub:'8cm'},{v:'high',label:'High Peak',sub:'10cm'}].map(p => {
+          const active = (state.form.peak||'mid') === p.v;
+          return `<button onclick="state.form.peak='${p.v}';renderPanel()" style="flex:1;padding:10px 8px;border-radius:10px;border:2px solid ${active?'#47360B':'#D4CFC0'};background:${active?'#47360B':'#fff'};cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all .15s">
+            <span style="font-size:11px;font-weight:700;color:${active?'#FCD68A':'#47360B'}">${p.label}</span>
+            <span style="font-size:10px;color:${active?'rgba(252,214,138,.8)':'#9A8A6A'}">${p.sub}</span>
+          </button>`;
+        }).join('')}
+      </div>
     </div>
 
     ${qtyValid && activeTier ? `
@@ -1366,8 +1408,8 @@ ${capInner}
 
 
 function submitOrder() {
-  const qtyCheck = parseInt(state.form.qty) || 0;
-  if (!state.form.name || !state.form.email || !qtyCheck || qtyCheck < 25) return;
+  const qty = getTotalQty();
+  if (!state.form.name || !state.form.email || qty < 25) return;
 
   const cl = CAP_PARTS.map(p=>`${p.label}: ${colourName(state.colours[p.id], p.id)} (${state.colours[p.id]})`).join('\n');
   const tl = state.items.filter(i=>i.type==='text').map(i=>`"${i.text}" | ${i.font} | ${i.color}`).join('\n') || 'None';
@@ -1377,14 +1419,24 @@ function submitOrder() {
   const wantUnderbrim = !!state.underbrimPhoto;
   const textCount = state.items.filter(i=>i.type==='text').length;
 
+  // Sizes breakdown
+  const sizesObj = f.sizes || {kids:0,women:0,men:0,xl:0};
+  const sizesStr = [
+    sizesObj.kids  > 0 ? `Kids (54cm): ${sizesObj.kids}`   : null,
+    sizesObj.women > 0 ? `Women (56cm): ${sizesObj.women}` : null,
+    sizesObj.men   > 0 ? `Men (58cm): ${sizesObj.men}`     : null,
+    sizesObj.xl    > 0 ? `XL (61cm): ${sizesObj.xl}`       : null,
+  ].filter(Boolean).join('\n') || 'None specified';
+
   // Pricing
   const TIERS = [{min:25,max:49,price:30},{min:50,max:99,price:22},{min:100,max:199,price:18},{min:200,max:499,price:16},{min:500,max:Infinity,price:14}];
-  const qty = parseInt(f.qty) || 0;
   const tier = TIERS.find(t => qty >= t.min && qty <= t.max);
   const extraPerHat = (sideTags*0.5) + (wantUnderbrim?1:0) + (textCount*0.5);
   const totalOrder = tier ? (tier.price + extraPerHat) * qty : null;
 
   const extras = [
+    state.form.fullFabric ? '+ Full Fabric cap (no mesh)' : null,
+    `+ Peak height: ${state.form.peak === 'high' ? 'High Peak (10cm)' : 'Mid Peak (8cm)'}`,
     textCount > 0 ? `+ Text embroidery: ${textCount} × $0.50/hat` : null,
     wantUnderbrim ? '+ Underbrim photo print: $1.00/hat' : null,
   ].filter(Boolean).join('\n') || 'None';
@@ -1431,7 +1483,8 @@ function submitOrder() {
       name:          f.name,
       email:         f.email,
       phone:         f.phone || '—',
-      qty:           f.qty   || '—',
+      qty:           String(qty),
+      sizes:         sizesStr,
       notes:         f.notes || '—',
       colours:       cl,
       text_elements: tl,
@@ -1469,7 +1522,7 @@ function submitOrder() {
 function resetAll() {
   state.colours = Object.fromEntries(CAP_PARTS.map(p=>[p.id,p.def]));
   state.items = []; state.selId = null; state.sent = false;
-  state.form = {name:'',email:'',phone:'',qty:'',notes:'',sideTags:0,wantUnderbrim:false};
+  state.form = {name:'',email:'',phone:'',qty:'',notes:'',sideTags:0,wantUnderbrim:false,sizes:{kids:0,women:0,men:0,xl:0},peak:'mid',fullFabric:false};
   renderCap(); renderCanvas(); updateHint(); switchTab('colours');
 }
 
@@ -1717,11 +1770,16 @@ function createDragItem(item) {
   return el;
 }
 
+function getTotalQty() {
+  const s = state.form.sizes || {};
+  return (s.kids||0) + (s.women||0) + (s.men||0) + (s.xl||0);
+}
+
 function updateSubmitBtn() {
   const btn = document.querySelector('#panel .btn-primary[onclick*="submitOrder"]');
   if (!btn) return;
-  const qtyNum = parseInt(state.form.qty) || 0;
-  const qtyValid = qtyNum >= 25 && qtyNum % 25 === 0;
+  const qtyNum = getTotalQty();
+  const qtyValid = qtyNum >= 25;
   const canSubmit = !!(state.form.name && state.form.email && state.form.phone && qtyValid);
   btn.disabled = !canSubmit;
   const missing = [];
