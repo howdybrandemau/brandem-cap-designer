@@ -384,7 +384,7 @@ const state = {
   italic: false,
   tCurve: 0,
   tBg: 'none',
-  form: {name:'',email:'',phone:'',qty:'',notes:'',sideTags:0,wantUnderbrim:false,sizes:{kids:0,women:0,men:0,xl:0},peak:'mid',fullFabric:false},
+  form: {name:'',email:'',phone:'',qty:'',notes:'',sideTags:0,wantUnderbrim:false,sizes:{kids:0,women:0,men:0,xl:0},peak:'mid',fullFabric:false,stripes:true},
   sent: false,
   sending: false,
   nextId: 1,
@@ -404,19 +404,58 @@ function renderCap() {
   if (_renderingCap) return;
   _renderingCap = true;
   const wrap = document.getElementById('cap-svg-wrap');
-  // Button follows front; sandwich + underbrim follow brim
   const front = state.colours['front'];
-  const brim = state.colours['brim'];
-  let cssVars = CAP_PARTS.map(p => `${p.cssVar}:${state.colours[p.id]}`).join(';');
-  cssVars += `;--cap-button:${front};--cap-sandwich:${brim};--cap-underbrim:${brim}`;
-  // Inject mesh colour into the dot pattern so it colours the actual mesh, not just the background
+  const brim  = state.colours['brim'];
+
+  // CSS vars — strip gingham prefix so vars hold a valid fallback hex
+  let cssVars = CAP_PARTS.map(p => `${p.cssVar}:${baseColour(state.colours[p.id])}`).join(';');
+  cssVars += `;--cap-button:${baseColour(front)};--cap-sandwich:${baseColour(brim)};--cap-underbrim:${baseColour(brim)}`;
+
   const meshColour = state.colours['mesh'] || '#888888';
-  const dynDefs = DEFS.split('fill:#686868').join('fill:' + meshColour);
+  const dynDefs = DEFS.split('fill:#686868').join('fill:' + baseColour(meshColour));
+
+  // ── Gingham SVG pattern defs ────────────────────────────────────────────
+  const ginghamDefs = ['front','brim','mesh'].map(partId => {
+    const val = state.colours[partId];
+    if (!val || !val.startsWith('gingham:')) return '';
+    const hex = val.slice(8);
+    const r = parseInt(hex.slice(1,3),16);
+    const g = parseInt(hex.slice(3,5),16);
+    const b = parseInt(hex.slice(5,7),16);
+    return `<pattern id="gingham-${partId}" patternUnits="userSpaceOnUse" width="6" height="6">
+      <rect width="6" height="6" fill="white"/>
+      <rect x="0" y="0" width="3" height="6" fill="rgba(${r},${g},${b},0.35)"/>
+      <rect x="0" y="0" width="6" height="3" fill="rgba(${r},${g},${b},0.35)"/>
+      <rect x="0" y="0" width="3" height="3" fill="rgba(${r},${g},${b},0.6)"/>
+    </pattern>`;
+  }).join('');
+
+  // ── Style overrides: apply patterns to matching SVG groups ───────────────
+  let ginghamOverrides = '';
+  if (state.colours['front'] && state.colours['front'].startsWith('gingham:')) {
+    ginghamOverrides += `#g18 path, #g18 rect { fill: url(#gingham-front) !important; stroke: rgba(0,0,0,0.15) !important; }`;
+  }
+  if (state.colours['brim'] && state.colours['brim'].startsWith('gingham:')) {
+    ginghamOverrides += `#g1 path, #g1 rect { fill: url(#gingham-brim) !important; stroke: rgba(0,0,0,0.15) !important; }
+    #g28 path, #g28 rect { fill: url(#gingham-brim) !important; stroke: url(#gingham-brim) !important; }`;
+  }
+  if (state.colours['mesh'] && state.colours['mesh'].startsWith('gingham:') && state.form.fullFabric) {
+    ginghamOverrides += `#mesh-bg path, #mesh-bg rect { fill: url(#gingham-mesh) !important; stroke: none !important; }
+    #g6 path, #g6 rect { fill: url(#gingham-mesh) !important; stroke: rgba(0,0,0,0.15) !important; }`;
+  }
+
+  const fullFabricStyle = state.form.fullFabric
+    ? `#mesh-bg{display:inline !important} #g30{display:none !important}` : '';
+  const stripesStyle = !state.form.stripes
+    ? `#g26{display:none !important} #g27{display:none !important}` : '';
+
+  const styleBlock = (fullFabricStyle || ginghamOverrides || stripesStyle)
+    ? `<style>${fullFabricStyle}${stripesStyle}${ginghamOverrides}</style>` : '';
+
   const extraDefs = state.underbrimPhoto
     ? `<clipPath id="underbrim-photo-clip"><path d="${UNDERBRIM_PATH_D}" transform="${UNDERBRIM_TRANSFORM}"/></clipPath>`
     : '';
-  // Underbrim photo with pan+zoom applied via transform
-  // Base rect for underbrim area: x=210 y=65 w=52 h=40 (SVG viewBox units)
+
   const _ubX = 210, _ubY = 65, _ubW = 52, _ubH = 40;
   const _ubZ = state.underbrimZoom || 1;
   const _ubCx = _ubX + _ubW / 2 + (state.underbrimPanX || 0);
@@ -426,12 +465,10 @@ function renderCap() {
   const photoImg = state.underbrimPhoto
     ? `<image href="${state.underbrimPhoto}" x="${(_ubCx - _ubIW/2).toFixed(2)}" y="${(_ubCy - _ubIH/2).toFixed(2)}" width="${_ubIW.toFixed(2)}" height="${_ubIH.toFixed(2)}" preserveAspectRatio="xMidYMid slice" clip-path="url(#underbrim-photo-clip)" opacity="0.93"/>`
     : '';
-  const fullFabricStyle = state.form.fullFabric
-    ? `<style>#mesh-bg{display:inline !important} #g30{display:none !important}</style>`
-    : '';
+
   wrap.innerHTML = `<svg viewBox="10 50 260 130" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="${cssVars};width:100%;height:100%;display:block">
-    <defs>${dynDefs}${extraDefs}</defs>
-    ${fullFabricStyle}
+    <defs>${dynDefs}${extraDefs}${ginghamDefs}</defs>
+    ${styleBlock}
     <g>${CAP_LAYERS}</g>
     ${photoImg}
   </svg>`;
@@ -472,7 +509,12 @@ function limitLines(el, max) {
 }
 
 function colourName(hex, partId) {
-  if (partId === 'mesh') {
+  if (hex && hex.startsWith('gingham:')) {
+    const base = hex.slice(8);
+    const g = GINGHAM_COLOURS.find(c => c.hex.toLowerCase() === base.toLowerCase());
+    return g ? 'Gingham · ' + g.name : 'Gingham';
+  }
+  if (partId === 'mesh' && !state.form.fullFabric) {
     const m = MESH_COLOURS.find(c => c.hex.toLowerCase() === hex.toLowerCase());
     if (m) return m.name;
   }
@@ -486,8 +528,16 @@ let pickerPartId = null;
 function openPicker(partId) {
   pickerPartId = partId;
   const part = CAP_PARTS.find(p => p.id === partId);
-  const pt = document.getElementById('picker-title'); if(pt) pt.textContent = part.label;
-  document.getElementById('picker-swatch').style.background = state.colours[partId];
+  const pt = document.getElementById('picker-title'); if(pt) pt.textContent = part ? part.label : partId;
+  const curVal = state.colours[partId];
+  const isGingham = curVal && curVal.startsWith('gingham:');
+  pickerMode = isGingham ? 'gingham' : 'cotton';
+  const swatchEl = document.getElementById('picker-swatch');
+  if (isGingham) {
+    swatchEl.style.cssText = swatchEl.style.cssText + ';' + ginghamSwatchCSS(baseColour(curVal));
+  } else {
+    swatchEl.style.background = curVal;
+  }
   document.getElementById('picker-search').value = '';
   document.getElementById('picker-modal').style.display = 'flex';
   renderPickerGrid();
@@ -542,21 +592,105 @@ const MESH_COLOURS = [
 ];
 
 
+const GINGHAM_COLOURS = [
+  {name:'Crimson #1',   hex:'#74080a'},
+  {name:'Red #2',       hex:'#da4642'},
+  {name:'Navy Dark #3', hex:'#364e72'},
+  {name:'Blue #4',      hex:'#196ea9'},
+  {name:'Purple #5',    hex:'#79467a'},
+  {name:'Khaki #6',     hex:'#80785b'},
+  {name:'Brown #8',     hex:'#65401a'},
+  {name:'Orange #9',    hex:'#e7753a'},
+  {name:'Sage #10',     hex:'#788d7c'},
+  {name:'Black #12',    hex:'#28110b'},
+  {name:'Gold #13',     hex:'#e29f1a'},
+  {name:'Navy #14',     hex:'#314e96'},
+  {name:'Green #15',    hex:'#86bc67'},
+  {name:'Light Blue #16',hex:'#7696ca'},
+  {name:'Yellow #17',   hex:'#f0e44f'},
+  {name:'Pink #18',     hex:'#de949a'},
+  {name:'Black #19',    hex:'#030303'},
+];
+
+// Strip 'gingham:' prefix to get a plain hex for CSS/rendering
+function baseColour(val) {
+  if (val && val.startsWith('gingham:')) return val.slice(8);
+  return val;
+}
+
+// CSS background that previews a gingham check pattern
+function ginghamSwatchCSS(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `background:
+    repeating-linear-gradient(90deg,rgba(${r},${g},${b},0.55) 0,rgba(${r},${g},${b},0.55) 5px,transparent 5px,transparent 10px),
+    repeating-linear-gradient(0deg,rgba(${r},${g},${b},0.55) 0,rgba(${r},${g},${b},0.55) 5px,transparent 5px,transparent 10px),
+    white`;
+}
+
+let pickerMode = 'cotton'; // 'cotton' | 'gingham'
+
 function closePicker() {
   document.getElementById('picker-modal').style.display = 'none';
   pickerPartId = null;
+  pickerMode = 'cotton';
 }
 
 function renderPickerGrid() {
   const q = document.getElementById('picker-search').value.toLowerCase();
-  const isMesh = pickerPartId === 'mesh' && !state.form.fullFabric;
-  const palette = isMesh ? MESH_COLOURS : COLOURS;
-  const list = palette.filter(c => c.name.toLowerCase().includes(q) || c.hex.includes(q));
-  const cur = pickerPartId ? state.colours[pickerPartId] : '';
+  const isMeshPart = pickerPartId === 'mesh' && !state.form.fullFabric;
+  const canGingham = (pickerPartId === 'front' || pickerPartId === 'brim' || (pickerPartId === 'mesh' && state.form.fullFabric));
   const grid = document.getElementById('picker-grid');
+  const cur = pickerPartId ? state.colours[pickerPartId] : '';
 
-  if (isMesh) {
-    // Mesh: named swatches with visible label + number
+  // ── Tab toggle for gingham-capable parts ──────────────────────────────────
+  let tabHtml = '';
+  if (canGingham) {
+    tabHtml = `<div style="display:flex;gap:6px;margin-bottom:8px">
+      <button onclick="pickerMode='cotton';renderPickerGrid()" style="flex:1;padding:6px;border-radius:8px;border:2px solid ${pickerMode==='cotton'?'#47360B':'#D4CFC0'};background:${pickerMode==='cotton'?'#47360B':'#fff'};color:${pickerMode==='cotton'?'#FCD68A':'#9A8A6A'};font-size:11px;font-weight:700;cursor:pointer">Cotton</button>
+      <button onclick="pickerMode='gingham';renderPickerGrid()" style="flex:1;padding:6px;border-radius:8px;border:2px solid ${pickerMode==='gingham'?'#47360B':'#D4CFC0'};background:${pickerMode==='gingham'?'#47360B':'#fff'};color:${pickerMode==='gingham'?'#FCD68A':'#9A8A6A'};font-size:11px;font-weight:700;cursor:pointer">Gingham</button>
+    </div>`;
+    grid.previousElementSibling && grid.previousElementSibling.id === 'picker-tab-row'
+      ? (grid.previousElementSibling.innerHTML = tabHtml)
+      : (() => {
+          let tabRow = document.getElementById('picker-tab-row');
+          if (!tabRow) {
+            tabRow = document.createElement('div');
+            tabRow.id = 'picker-tab-row';
+            grid.parentNode.insertBefore(tabRow, grid);
+          }
+          tabRow.innerHTML = tabHtml;
+        })();
+  } else {
+    const tabRow = document.getElementById('picker-tab-row');
+    if (tabRow) tabRow.innerHTML = '';
+  }
+
+  // ── Gingham grid ──────────────────────────────────────────────────────────
+  if (canGingham && pickerMode === 'gingham') {
+    const curBase = cur && cur.startsWith('gingham:') ? cur.slice(8) : '';
+    const list = GINGHAM_COLOURS.filter(c => !q || c.name.toLowerCase().includes(q) || c.hex.includes(q));
+    grid.style.gridTemplateColumns = 'repeat(4, 1fr)';
+    grid.style.gap = '8px';
+    grid.style.display = 'grid';
+    grid.innerHTML = list.map(c => {
+      const sel = c.hex.toLowerCase() === curBase.toLowerCase();
+      return `<button onclick="pickColour('gingham:${c.hex}')" title="${c.name}"
+        style="background:none;border:none;cursor:pointer;padding:4px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;outline:none">
+        <span style="display:block;width:48px;height:48px;border-radius:8px;${ginghamSwatchCSS(c.hex)};border:${sel?'3px solid #F74D24':'1.5px solid rgba(0,0,0,.12)'};flex-shrink:0"></span>
+        <span style="font-size:9px;font-weight:700;color:#47360B;text-align:center;line-height:1.2;max-width:56px;word-break:break-word">${c.name}</span>
+      </button>`;
+    }).join('');
+    const pc = document.getElementById('picker-count');
+    if (pc) pc.textContent = list.length + ' gingham colours';
+    return;
+  }
+
+  const palette = isMeshPart ? MESH_COLOURS : COLOURS;
+  const list = palette.filter(c => c.name.toLowerCase().includes(q) || c.hex.includes(q));
+
+  if (isMeshPart) {
     grid.style.gridTemplateColumns = 'repeat(5, 1fr)';
     grid.style.gap = '10px 6px';
     grid.innerHTML = list.map(c => {
@@ -621,12 +755,21 @@ function renderPickerGrid() {
   }
 
   const pc = document.getElementById('picker-count');
-  if (pc) pc.textContent = list.length + ' colours' + (isMesh ? ' · mesh only' : '');
+  if (pc) pc.textContent = list.length + ' colours' + (isMeshPart ? ' · mesh only' : '');
 }
 
-function pickColour(hex) {
+function pickColour(val) {
   if (!pickerPartId) return;
-  state.colours[pickerPartId] = hex;
+  state.colours[pickerPartId] = val;
+  // Update live swatch in picker header
+  const swatchEl = document.getElementById('picker-swatch');
+  if (swatchEl) {
+    if (val.startsWith('gingham:')) {
+      swatchEl.style.cssText = swatchEl.style.cssText + ';' + ginghamSwatchCSS(baseColour(val));
+    } else {
+      swatchEl.style.background = val;
+    }
+  }
   renderCap();
   renderPanel();
   closePicker();
@@ -677,28 +820,42 @@ function renderPanel() {
 
 function renderColoursPanel() {
   const ff = state.form.fullFabric;
+  const st = state.form.stripes;
   const parts = CAP_PARTS.map(p => {
-    if (p.id === 'mesh') return {...p, label: ff ? 'Side Panels (Fabric)' : 'Mesh'};
+    if (p.id === 'mesh') return {...p, label: ff ? 'Full Fabric' : 'Mesh'};
     return p;
   });
-  const rows = parts.map(p => `
+  const rows = parts.map(p => {
+    const val = state.colours[p.id];
+    const isG = val && val.startsWith('gingham:');
+    const swatchStyle = isG ? ginghamSwatchCSS(baseColour(val)) : `background:${val}`;
+    return `
     <div class="part-row" onclick="openPicker('${p.id}')">
-      <div class="part-swatch" style="background:${state.colours[p.id]}"></div>
+      <div class="part-swatch" style="${swatchStyle}"></div>
       <div style="flex:1;min-width:0">
         <div class="part-label">${p.label}</div>
-        <div class="part-color-name">${colourName(state.colours[p.id], p.id)}</div>
+        <div class="part-color-name">${colourName(val, p.id)}</div>
       </div>
       <div class="part-arrow">›</div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   return `
-    <div onclick="state.form.fullFabric=!state.form.fullFabric;renderPanel()" style="cursor:pointer;background:${ff?'#47360B':'#fff'};border:2px solid ${ff?'#47360B':'#D4CFC0'};border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;transition:all .15s;margin-bottom:2px">
+    <div onclick="state.form.fullFabric=!state.form.fullFabric;renderCap();renderPanel()" style="cursor:pointer;background:${ff?'#47360B':'#fff'};border:2px solid ${ff?'#47360B':'#D4CFC0'};border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;transition:all .15s;margin-bottom:2px">
       <div style="flex:1;min-width:0">
         <div style="font-size:12px;font-weight:700;color:${ff?'#FCD68A':'#47360B'}">🧢 Full Fabric Cap</div>
       </div>
       <div style="width:36px;height:20px;border-radius:10px;background:${ff?'#FCD68A':'#D4CFC0'};position:relative;flex-shrink:0;transition:background .15s">
         <div style="position:absolute;top:3px;${ff?'right:3px':'left:3px'};width:14px;height:14px;border-radius:50%;background:${ff?'#47360B':'#fff'};box-shadow:0 1px 3px rgba(0,0,0,.2);transition:all .15s"></div>
+      </div>
+    </div>
+    <div onclick="state.form.stripes=!state.form.stripes;renderCap();renderPanel()" style="cursor:pointer;background:${st?'#47360B':'#fff'};border:2px solid ${st?'#47360B':'#D4CFC0'};border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;transition:all .15s;margin-bottom:2px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:700;color:${st?'#FCD68A':'#47360B'}">Stripes</div>
+      </div>
+      <div style="width:36px;height:20px;border-radius:10px;background:${st?'#FCD68A':'#D4CFC0'};position:relative;flex-shrink:0;transition:background .15s">
+        <div style="position:absolute;top:3px;${st?'right:3px':'left:3px'};width:14px;height:14px;border-radius:50%;background:${st?'#47360B':'#fff'};box-shadow:0 1px 3px rgba(0,0,0,.2);transition:all .15s"></div>
       </div>
     </div>
     <div class="section-label">Tap a part to change colour</div>
@@ -1027,7 +1184,7 @@ function renderOrderPanel() {
     <div class="summary-row">
       <span style="color:#9A8A6A;font-size:11px">${p.label}</span>
       <div style="display:flex;align-items:center;gap:5px">
-        <div class="summary-dot" style="background:${state.colours[p.id]};${state.colours[p.id]==='#ffffff'?'border:1px solid #D4CFC0':''}"></div>
+        <div class="summary-dot" style="${state.colours[p.id]&&state.colours[p.id].startsWith('gingham:')?ginghamSwatchCSS(baseColour(state.colours[p.id])):('background:'+state.colours[p.id])};${state.colours[p.id]==='#ffffff'?'border:1px solid #D4CFC0':''}"></div>
         <span style="color:#47360B;font-size:11px;font-weight:500">${colourName(state.colours[p.id], p.id)}</span>
       </div>
     </div>
@@ -1139,7 +1296,7 @@ function renderOrderPanel() {
     <div>
       <div class="field-label" style="margin-bottom:8px">Peak / Brim Height</div>
       <div style="display:flex;gap:8px">
-        ${[{v:'mid',label:'Mid Peak',sub:'8cm'},{v:'high',label:'High Peak',sub:'10cm'}].map(p => {
+        ${[{v:'low',label:'Low Profile',sub:'6cm'},{v:'mid',label:'Mid Peak',sub:'8cm'},{v:'high',label:'High Peak',sub:'10cm'}].map(p => {
           const active = (state.form.peak||'mid') === p.v;
           return `<button onclick="state.form.peak='${p.v}';renderPanel()" style="flex:1;padding:10px 8px;border-radius:10px;border:2px solid ${active?'#47360B':'#D4CFC0'};background:${active?'#47360B':'#fff'};cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all .15s">
             <span style="font-size:11px;font-weight:700;color:${active?'#FCD68A':'#47360B'}">${p.label}</span>
@@ -1411,7 +1568,7 @@ function submitOrder() {
   const qty = getTotalQty();
   if (!state.form.name || !state.form.email || qty < 25) return;
 
-  const cl = CAP_PARTS.map(p=>`${p.label}: ${colourName(state.colours[p.id], p.id)} (${state.colours[p.id]})`).join('\n');
+  const cl = CAP_PARTS.map(p=>`${p.label}: ${colourName(state.colours[p.id], p.id)} (${baseColour(state.colours[p.id])})`).join('\n');
   const tl = state.items.filter(i=>i.type==='text').map(i=>`"${i.text}" | ${i.font} | ${i.color}`).join('\n') || 'None';
   const ll = state.items.filter(i=>i.type==='logo').length;
   const f = state.form;
@@ -1436,7 +1593,8 @@ function submitOrder() {
 
   const extras = [
     state.form.fullFabric ? '+ Full Fabric cap (no mesh)' : null,
-    `+ Peak height: ${state.form.peak === 'high' ? 'High Peak (10cm)' : 'Mid Peak (8cm)'}`,
+    !state.form.stripes ? '+ Stripes: None (removed)' : null,
+    `+ Peak height: ${{low:'Low Profile (6cm)',mid:'Mid Peak (8cm)',high:'High Peak (10cm)'}[state.form.peak||'mid']}`,
     textCount > 0 ? `+ Text embroidery: ${textCount} × $0.50/hat` : null,
     wantUnderbrim ? '+ Underbrim photo print: $1.00/hat' : null,
   ].filter(Boolean).join('\n') || 'None';
@@ -1522,7 +1680,7 @@ function submitOrder() {
 function resetAll() {
   state.colours = Object.fromEntries(CAP_PARTS.map(p=>[p.id,p.def]));
   state.items = []; state.selId = null; state.sent = false;
-  state.form = {name:'',email:'',phone:'',qty:'',notes:'',sideTags:0,wantUnderbrim:false,sizes:{kids:0,women:0,men:0,xl:0},peak:'mid',fullFabric:false};
+  state.form = {name:'',email:'',phone:'',qty:'',notes:'',sideTags:0,wantUnderbrim:false,sizes:{kids:0,women:0,men:0,xl:0},peak:'mid',fullFabric:false,stripes:true};
   renderCap(); renderCanvas(); updateHint(); switchTab('colours');
 }
 
