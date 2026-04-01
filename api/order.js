@@ -2,7 +2,7 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
   const {
-    name, email, phone, qty, notes,
+    name, email, phone, qty, sizes, notes,
     colours, text_elements, logos, extras, total,
     svg_b64, underbrim_b64, underbrim_ext
   } = req.body || {};
@@ -22,7 +22,8 @@ module.exports = async function handler(req, res) {
     + '<tr style="background:#FFF8EE"><td style="padding:8px;font-weight:bold">Email</td><td style="padding:8px"><a href="mailto:' + email + '">' + email + '</a></td></tr>'
     + '<tr><td style="padding:8px;font-weight:bold">Phone</td><td style="padding:8px">' + (phone || '—') + '</td></tr>'
     + '<tr style="background:#FFF8EE"><td style="padding:8px;font-weight:bold">Quantity</td><td style="padding:8px">' + qty + ' hats</td></tr>'
-    + '<tr><td style="padding:8px;font-weight:bold">Total</td><td style="padding:8px;font-size:18px;font-weight:bold;color:#F74D24">' + total + '</td></tr>'
+    + '<tr><td style="padding:8px;font-weight:bold;vertical-align:top">Sizes</td><td style="padding:8px;white-space:pre-line">' + (sizes || '—') + '</td></tr>'
+    + '<tr style="background:#FFF8EE"><td style="padding:8px;font-weight:bold">Total</td><td style="padding:8px;font-size:18px;font-weight:bold;color:#F74D24">' + total + '</td></tr>'
     + '<tr style="background:#FFF8EE"><td style="padding:8px;font-weight:bold">Notes</td><td style="padding:8px">' + (notes || '—') + '</td></tr>'
     + '</table>'
     + '<h3 style="font-family:sans-serif;color:#47360B;margin-top:24px">Design Details</h3>'
@@ -99,7 +100,7 @@ module.exports = async function handler(req, res) {
         phone:    { phone: phone || '', countryShortName: 'AU' },
         numbers:  qty ? String(qty) : '',
         text:     total || '',
-        long_text: { text: (colours || '') + '\n\nText: ' + (text_elements || 'None') + '\nLogos: ' + (logos || 'None') + '\nExtras: ' + (extras || 'None') + (notes ? '\nNotes: ' + notes : '') }
+        long_text: { text: (colours || '') + '\n\nSizes: ' + (sizes || '—') + '\n\nText: ' + (text_elements || 'None') + '\nLogos: ' + (logos || 'None') + '\nExtras: ' + (extras || 'None') + (notes ? '\nNotes: ' + notes : '') }
       });
 
       const mondayQuery = `mutation {
