@@ -513,7 +513,25 @@ function limitLines(el, max) {
   }
 }
 
+// Strip trailing #number for public display — keeps full name for internal email use
+function stripNum(name) { return name.replace(/\s*#\d+$/, '').trim(); }
+
 function colourName(hex, partId) {
+  if (hex && hex.startsWith('gingham:')) {
+    const base = hex.slice(8);
+    const g = GINGHAM_COLOURS.find(c => c.hex.toLowerCase() === base.toLowerCase());
+    return g ? 'Gingham · ' + stripNum(g.name) : 'Gingham';
+  }
+  if (partId === 'mesh' && !state.form.fullFabric) {
+    const m = MESH_COLOURS.find(c => c.hex.toLowerCase() === hex.toLowerCase());
+    if (m) return stripNum(m.name);
+  }
+  const c = COLOURS.find(c => c.hex.toLowerCase() === hex.toLowerCase());
+  return c ? c.name : hex;
+}
+
+// Full name including number — used only in order email so we can identify colours internally
+function colourNameFull(hex, partId) {
   if (hex && hex.startsWith('gingham:')) {
     const base = hex.slice(8);
     const g = GINGHAM_COLOURS.find(c => c.hex.toLowerCase() === base.toLowerCase());
@@ -655,6 +673,16 @@ function renderPickerGrid() {
   const grid = document.getElementById('picker-grid');
   const cur = pickerPartId ? state.colours[pickerPartId] : '';
 
+  // ── Shared swatch renderer — defined first so all branches can use it ─────
+  const renderSwatch = (hex, label, selected, onClick, extraStyle = '') => {
+    const isWhite = hex === '#ffffff';
+    return `<button onclick="${onClick}" title="${label}"
+      style="background:none;border:none;cursor:pointer;padding:3px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;outline:none">
+      <span style="display:block;width:44px;height:44px;border-radius:8px;${extraStyle || 'background:' + hex};${isWhite ? 'box-shadow:inset 0 0 0 1.5px #ccc;' : ''}border:${selected ? '3px solid #F74D24' : '1.5px solid rgba(0,0,0,.12)'};flex-shrink:0"></span>
+      <span style="font-size:9px;font-weight:700;color:#47360B;text-align:center;line-height:1.2;max-width:52px;word-break:break-word;display:block">${label}</span>
+    </button>`;
+  };
+
   // ── Tab toggle for gingham-capable parts ──────────────────────────────────
   let tabHtml = '';
   if (canGingham) {
@@ -692,14 +720,10 @@ function renderPickerGrid() {
     });
     grid.innerHTML = groups.map(grp => `
       <div style="font-size:9px;font-weight:700;color:#7A6030;letter-spacing:1.5px;text-transform:uppercase;padding:8px 0 4px;${grp !== groups[0] ? 'border-top:1px solid #EAE9E1;margin-top:4px;' : ''}">${grp}</div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px">
         ${seen[grp].map(c => {
           const sel = c.hex.toLowerCase() === curBase.toLowerCase();
-          return `<button onclick="pickColour('gingham:${c.hex}')" title="${c.name}"
-            style="background:none;border:none;cursor:pointer;padding:2px;display:flex;flex-direction:column;align-items:center;gap:3px;outline:none">
-            <span style="display:block;width:48px;height:48px;border-radius:8px;${ginghamSwatchCSS(c.hex)};border:${sel?'3px solid #F74D24':'1.5px solid rgba(0,0,0,.12)'};flex-shrink:0"></span>
-            <span style="font-size:9px;font-weight:700;color:#47360B;text-align:center;line-height:1.2;max-width:56px;word-break:break-word">${c.name}</span>
-          </button>`;
+          return renderSwatch(c.hex, stripNum(c.name), sel, `pickColour('gingham:${c.hex}')`, ginghamSwatchCSS(c.hex));
         }).join('')}
       </div>
     `).join('');
@@ -712,36 +736,48 @@ function renderPickerGrid() {
   const list = palette.filter(c => c.name.toLowerCase().includes(q) || c.hex.includes(q));
 
   if (isMeshPart) {
-    grid.style.gridTemplateColumns = 'repeat(5, 1fr)';
-    grid.style.gap = '10px 6px';
-    grid.innerHTML = list.map(c => {
-      const sel = c.hex.toLowerCase() === cur.toLowerCase();
-      const isWhite = c.hex === '#ffffff';
-      const m = c.name.match(/^(.+?)\s*(#\d+)$/);
-      const label = m ? m[1] : c.name;
-      const num   = m ? m[2] : '';
-      return `<button onclick="pickColour('${c.hex}')" title="${c.name}"
-        style="background:none;border:none;cursor:pointer;padding:4px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;outline:none">
-        <span style="display:block;width:42px;height:42px;border-radius:50%;background:${c.hex};${isWhite ? 'box-shadow:inset 0 0 0 1.5px #ccc;' : ''}border:${sel ? '3px solid #F74D24' : '1.5px solid rgba(0,0,0,.12)'};transition:transform .12s;flex-shrink:0"></span>
-        <span style="font-size:9px;font-weight:700;color:#47360B;text-align:center;line-height:1.2;letter-spacing:.2px;text-transform:uppercase;max-width:54px;word-break:break-word;display:block">${label}</span>
-        <span style="font-size:9px;font-weight:400;color:#9A8A6A;line-height:1;display:block">${num}</span>
-      </button>`;
-    }).join('');
-  } else {
-    // Cotton: 10-column grid with group section headers
-    grid.style.gridTemplateColumns = 'repeat(10, 1fr)';
-    grid.style.gap = '4px';
     const groups = [
-      {label:'Whites & Creams',   start:'White #1',        end:'Natural #60'},
-      {label:'Pinks & Reds',      start:'Baby Pink #2',    end:'Rusty Red #80'},
-      {label:'Oranges & Yellows', start:'Pastel Yellow #29',end:'Rust #82'},
-      {label:'Browns & Tans',     start:'Pastel Brown #17',end:'Moss Brown #131'},
-      {label:'Greens',            start:'Lime Green #101', end:'Teal #113'},
-      {label:'Blues & Teals',     start:'Baby Blue #40',   end:'Deep Teal Blue #81'},
-      {label:'Purples & Lilacs',  start:'Lilac #110',      end:'Plum #7'},
-      {label:'Greys & Black',     start:'Light Grey #64',  end:'Black'},
+      {label:'Whites & Neutrals', colours: ['White #6','Ivory #18','Beige #17','Dark Beige #42','Sand #41']},
+      {label:'Pinks & Reds',      colours: ['Light Pink #22','Hot Pink #25','Coral #26','Peach #35','Red #4','Maroon #43','Rust #40','Burgundy #11','Orange #23']},
+      {label:'Yellows & Golds',   colours: ['Yellow #12','Mustard Yellow #13','Old Gold #39','Gold #46','Golden Brown #44']},
+      {label:'Browns & Tans',     colours: ['Tan #37','Brown #10','Dark Brown #33']},
+      {label:'Greens',            colours: ['Neon Green #21','Green #15','Green #38','Olive #45','Olive Green #16','Dark Sage Grey #47','Mint #28','Dark Green #31']},
+      {label:'Blues & Teals',     colours: ['Sky Blue #27','Blue #34','Blue #9','Blue #1','Royal Blue #30','Teal Blue #5','Dark Teal #20','Navy Blue #2','Dark Navy #8']},
+      {label:'Purples & Lilacs',  colours: ['Lavender #48','Lilac #29','Purple #24','Dark Purple #32']},
+      {label:'Greys & Black',     colours: ['Light Grey #19','Grey #3','Black #7']},
     ];
-    // Build group index
+    const nameToGroup = {};
+    groups.forEach(g => g.colours.forEach(n => nameToGroup[n] = g.label));
+    const grouped = {};
+    const order = [];
+    list.forEach(c => {
+      const grp = nameToGroup[c.name] || 'Other';
+      if (!grouped[grp]) { grouped[grp] = []; order.push(grp); }
+      grouped[grp].push(c);
+    });
+    grid.style.display = 'block';
+    grid.innerHTML = order.map((grp, i) => `
+      <div style="font-size:9px;font-weight:700;color:#7A6030;letter-spacing:1.5px;text-transform:uppercase;padding:8px 0 4px;${i > 0 ? 'border-top:1px solid #EAE9E1;margin-top:4px;' : ''}">${grp}</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px">
+        ${grouped[grp].map(c => {
+          const sel = c.hex.toLowerCase() === cur.toLowerCase();
+          const m = c.name.match(/^(.+?)\s*(#\d+)$/);
+          return renderSwatch(c.hex, m ? m[1] : c.name, sel, `pickColour('${c.hex}')`);
+        }).join('')}
+      </div>
+    `).join('');
+  } else {
+    // Cotton: grouped, same swatch style
+    const groups = [
+      {label:'Whites & Creams',   start:'White #1',         end:'Natural #60'},
+      {label:'Pinks & Reds',      start:'Baby Pink #2',     end:'Rusty Red #80'},
+      {label:'Oranges & Yellows', start:'Pastel Yellow #29',end:'Rust #82'},
+      {label:'Browns & Tans',     start:'Pastel Brown #17', end:'Moss Brown #131'},
+      {label:'Greens',            start:'Lime Green #101',  end:'Teal #113'},
+      {label:'Blues & Teals',     start:'Baby Blue #40',    end:'Deep Teal Blue #81'},
+      {label:'Purples & Lilacs',  start:'Lilac #110',       end:'Plum #7'},
+      {label:'Greys & Black',     start:'Light Grey #64',   end:'Black'},
+    ];
     const nameToGroup = {};
     groups.forEach(g => {
       let inGroup = false;
@@ -751,28 +787,23 @@ function renderPickerGrid() {
         if (c.name === g.end) inGroup = false;
       });
     });
-    let html = '';
-    let lastGroup = null;
+    const grouped = {};
+    const order = [];
     list.forEach(c => {
-      const grp = nameToGroup[c.name];
-      if (grp && grp !== lastGroup) {
-        if (lastGroup !== null) html += '</div>';
-        const topBorder = lastGroup !== null ? '1px solid #EAE9E1' : '';
-        const topMargin = lastGroup !== null ? '4px' : '0';
-        html += '<div style="grid-column:1/-1;font-size:9px;font-weight:700;color:#7A6030;letter-spacing:1.5px;text-transform:uppercase;padding:6px 0 2px;border-top:' + topBorder + ';margin-top:' + topMargin + '">' + grp + '</div>';
-        html += '<div style="display:contents">';
-        lastGroup = grp;
-      }
-      const sel = c.hex.toLowerCase() === cur.toLowerCase();
-      const white = c.hex === '#ffffff' ? 'box-shadow:inset 0 0 0 1px #ccc' : '';
-      html += '<button class="colour-swatch' + (sel ? ' selected' : '') + '" style="background:' + c.hex + ';' + white + '" title="' + c.name + '" onclick="pickColour(\'' + c.hex + '\')"></button>';
+      const grp = nameToGroup[c.name] || 'Other';
+      if (!grouped[grp]) { grouped[grp] = []; order.push(grp); }
+      grouped[grp].push(c);
     });
-        if (lastGroup !== null) html += '</div>';
-    // Wrap in a css-grid container so labels span full width
-    grid.style.gridTemplateColumns = 'repeat(10, 1fr)';
-    grid.style.gap = '4px';
-    grid.style.display = 'grid';
-    grid.innerHTML = html;
+    grid.style.display = 'block';
+    grid.innerHTML = order.map((grp, i) => `
+      <div style="font-size:9px;font-weight:700;color:#7A6030;letter-spacing:1.5px;text-transform:uppercase;padding:8px 0 4px;${i > 0 ? 'border-top:1px solid #EAE9E1;margin-top:4px;' : ''}">${grp}</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px">
+        ${grouped[grp].map(c => {
+          const sel = c.hex.toLowerCase() === cur.toLowerCase();
+          return renderSwatch(c.hex, c.name, sel, `pickColour('${c.hex}')`);
+        }).join('')}
+      </div>
+    `).join('');
   }
 
   const pc = document.getElementById('picker-count');
@@ -1589,7 +1620,7 @@ function submitOrder() {
   const qty = getTotalQty();
   if (!state.form.name || !state.form.email || qty < 25) return;
 
-  const cl = CAP_PARTS.map(p=>`${p.label}: ${colourName(state.colours[p.id], p.id)} (${baseColour(state.colours[p.id])})`).join('\n');
+  const cl = CAP_PARTS.map(p=>`${p.label}: ${colourNameFull(state.colours[p.id], p.id)} (${baseColour(state.colours[p.id])})`).join('\n');
   const tl = state.items.filter(i=>i.type==='text').map(i=>`"${i.text}" | ${i.font} | ${i.color}`).join('\n') || 'None';
   const ll = state.items.filter(i=>i.type==='logo').length;
   const f = state.form;
