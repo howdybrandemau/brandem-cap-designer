@@ -1616,7 +1616,25 @@ ${capInner}
 
 
 
-function submitOrder() {
+async function compressImage(dataUrl, maxW, quality) {
+    maxW = maxW || 1200; quality = quality || 0.80;
+    if (!dataUrl || dataUrl.startsWith('data:image/svg')) return dataUrl;
+    return new Promise(function(resolve) {
+      var img = new Image();
+      img.onload = function() {
+        var scale = Math.min(1, maxW / img.width);
+        var canvas = document.createElement('canvas');
+        canvas.width  = Math.round(img.width  * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = function() { resolve(dataUrl); };
+      img.src = dataUrl;
+    });
+  }
+
+  async function submitOrder() {
   const qty = getTotalQty();
   if (!state.form.name || !state.form.email || qty < 25) return;
 
@@ -1676,12 +1694,30 @@ function submitOrder() {
   let underbrimB64 = '';
   let underbrimExt = 'jpg';
   if (state.underbrimPhoto) {
-    const m = state.underbrimPhoto.match(/^data:image\/([^;]+);base64,(.+)$/);
-    if (m) { underbrimExt = m[1]; underbrimB64 = m[2]; }
-    console.log('Underbrim encoded, length:', underbrimB64.length);
+    const compressedPhoto = await compressImage(state.underbrimPhoto, 1200, 0.80);
+    const mPhoto = compressedPhoto.match(/^data:([^;]+);base64,(.+)$/);
+    if (mPhoto) { underbrimExt = mPhoto[1].replace('image/', ''); underbrimB64 = mPhoto[2]; }
+    console.log('Underbrim compressed, length:', underbrimB64.length);
   }
 
   // ── 3. Send ───────────────────────────────────────────────────────────────
+  // Collect and compress logos for email
+  const logosData = [];
+  for (const logoItem of state.items.filter(i => i.type === 'logo')) {
+    try {
+      if (logoItem.src && logoItem.src.startsWith('data:image/svg')) {
+        let svgText = logoItem.src.includes('base64,')
+          ? decodeURIComponent(escape(atob(logoItem.src.split('base64,')[1])))
+          : decodeURIComponent(logoItem.src.split(',')[1] || '');
+        logosData.push({ svg: svgText, ext: 'svg' });
+      } else if (logoItem.src) {
+        const cl = await compressImage(logoItem.src, 800, 0.75);
+        const ml = cl.match(/^data:([^;]+);base64,(.+)$/);
+        if (ml) logosData.push({ b64: ml[2], ext: ml[1].replace('image/', '') });
+      }
+    } catch(le) { console.error('Logo compress error:', le); }
+  }
+
   const controller = new AbortController();
   const timeoutId  = setTimeout(() => controller.abort(), 30000);
 
@@ -1704,6 +1740,7 @@ function submitOrder() {
       svg_b64:       svgB64,
       underbrim_b64: underbrimB64,
       underbrim_ext: underbrimExt,
+      logos_data:    logosData,
     })
   })
   .then(function(r) {
