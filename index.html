@@ -1199,15 +1199,16 @@ function renderUnderbrimPanel() {
 }
 
 function handleUnderbrimFile(file) {
-  if (!file || !file.type.startsWith('image/')) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    state.underbrimPhoto = e.target.result;
+  if (!file || !file.type.startsWith('image/')) {
+    if (file) alert('Please upload an image file (PNG or JPG) for the underbrim.');
+    return;
+  }
+  resizeImageFile(file, 1000, 0.85, (dataUrl) => {
+    state.underbrimPhoto = dataUrl;
     state.form.wantUnderbrim = true;
     renderCap();
     renderPanel();
-  };
-  reader.readAsDataURL(file);
+  });
 }
 
 function handleUnderbrimDrop(e) {
@@ -1511,12 +1512,54 @@ function addText() {
   }, 50);
 }
 
+// Resize/compress an uploaded image before storing it as base64.
+// Prevents huge phone photos from freezing the canvas or blowing the email payload limit.
+function resizeImageFile(file, maxDimension, quality, callback) {
+  const MAX_RAW_BYTES = 15 * 1024 * 1024; // 15MB hard cap on the original file
+  if (file.size > MAX_RAW_BYTES) {
+    alert("⚠️ Your image is too big!\n\nPlease submit without this logo/photo, then email it to howdy@brandemau.com — we'll take care of the rest.");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) { height = Math.round(height * (maxDimension / width)); width = maxDimension; }
+        else { width = Math.round(width * (maxDimension / height)); height = maxDimension; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      const isPng = /png/i.test(file.type) || /\.svg$/i.test(file.name || '');
+      // Keep SVGs and PNGs (transparency) as-is if small enough; otherwise compress to JPEG
+      if (/svg/i.test(file.type)) {
+        callback(e.target.result);
+      } else if (isPng && file.size < 2 * 1024 * 1024) {
+        callback(canvas.toDataURL('image/png'));
+      } else {
+        callback(canvas.toDataURL('image/jpeg', quality || 0.85));
+      }
+    };
+    img.onerror = () => {
+      alert('Sorry, that image could not be read. Please try a different file (PNG, JPG, or SVG).');
+    };
+    img.src = e.target.result;
+  };
+  reader.onerror = () => {
+    alert('Sorry, that file could not be loaded. Please try again.');
+  };
+  reader.readAsDataURL(file);
+}
+
 function handleLogo(input) {
   const f = input.files[0]; if (!f) return;
-  const r = new FileReader();
-  r.onload = e => {
+  resizeImageFile(f, 800, 0.85, (dataUrl) => {
     const {w: _lw, h: _lh} = getWBSize();
-    state.items.push({id: state.nextId++, type:'logo', src: e.target.result,
+    state.items.push({id: state.nextId++, type:'logo', src: dataUrl,
       px: (80 / _lw) * 100, py: (50 / _lh) * 100,
       sw: (70 / _lw) * 100,
     });
@@ -1524,8 +1567,7 @@ function handleLogo(input) {
     renderPanel();
     updateHint();
     input.value = '';
-  };
-  r.readAsDataURL(f);
+  });
 }
 
 function deleteItem(id) {
@@ -1768,6 +1810,7 @@ function submitOrder() {
   })
   .then(function(r) {
     clearTimeout(timeoutId);
+    if (r.status === 413) throw new Error('PAYLOAD_TOO_LARGE');
     if (!r.ok) return r.text().then(function(t) { throw new Error('Server ' + r.status + ': ' + t.slice(0,200)); });
     return r.json();
   })
@@ -1780,9 +1823,12 @@ function submitOrder() {
   .catch(function(err) {
     clearTimeout(timeoutId);
     state.sending = false;
-    const msg = err.name === 'AbortError'
-      ? 'Request timed out — please try again or email howdy@brandemau.com directly.'
-      : 'Could not connect. Please try again or email howdy@brandemau.com directly.';
+    let msg;
+    if (err.message === 'PAYLOAD_TOO_LARGE' || err.name === 'AbortError') {
+      msg = "⚠️ Your image is too big!\n\nPlease remove your logo and/or underbrim photo and submit again. Then just email your logo/photo to howdy@brandemau.com — we'll take care of the rest.";
+    } else {
+      msg = 'Could not connect. Please try again or email howdy@brandemau.com directly.';
+    }
     alert(msg);
     renderPanel();
   });
