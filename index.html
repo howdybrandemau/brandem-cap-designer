@@ -783,14 +783,13 @@ function renderPickerGrid() {
 
   if (isMeshPart) {
     const groups = [
-      {label:'Whites & Neutrals', colours: ['White #6','Black #7','Ivory #18']},
-      {label:'Pinks & Reds',      colours: ['Light Pink #22','Hot Pink #25','Coral #26','Peach #35','Red #4','Burgundy #11','Rust #40','Maroon #43']},
-      {label:'Purples',           colours: ['Purple #24','Lilac #29','Dark Purple #32','Lavender #48']},
-      {label:'Blues & Teals',     colours: ['Blue #1','Navy Blue #2','Teal Blue #5','Dark Navy #8','Blue #9','Dark Teal #20','Sky Blue #27','Royal Blue #30','Blue #34']},
-      {label:'Greens',            colours: ['Green #15','Olive Green #16','Neon Green #21','Mint #28','Dark Green #31','Green #38','Olive #45']},
-      {label:'Yellows & Oranges', colours: ['Yellow #12','Mustard Yellow #13','Yellow #14','Old Gold #39','Gold #46','Orange #23']},
-      {label:'Browns & Beiges',   colours: ['Brown #10','Dark Brown #33','Tan #37','Golden Brown #44','Beige #17','Sand #41','Dark Beige #42']},
-      {label:'Greys',             colours: ['Grey #3','Light Grey #19','Dark Sage Grey #47']},
+      {label:'Whites, Creams & Neutrals', colours: ['White #6','Ivory #18','Beige #17','Dark Beige #42','Sand #41','Peach #35']},
+      {label:'Pinks & Reds',              colours: ['Light Pink #22','Hot Pink #25','Coral #26','Orange #23','Red #4','Maroon #43','Rust #40','Burgundy #11']},
+      {label:'Yellows & Golds',           colours: ['Yellow #12','Mustard Yellow #13','Old Gold #39','Gold #46','Golden Brown #44','Tan #37','Brown #10','Dark Brown #33']},
+      {label:'Greens',                    colours: ['Neon Green #21','Green #15','Green #38','Olive #45','Olive Green #16','Dark Sage Grey #47','Mint #28','Dark Green #31']},
+      {label:'Blues & Teals',             colours: ['Sky Blue #27','Blue #34','Blue #9','Blue #1','Royal Blue #30','Teal Blue #5','Dark Teal #20','Navy Blue #2','Dark Navy #8']},
+      {label:'Purples & Lilacs',          colours: ['Lavender #48','Lilac #29','Purple #24','Dark Purple #32']},
+      {label:'Greys & Black',             colours: ['Light Grey #19','Grey #3','Black #7']},
     ];
     const nameToGroup = {};
     groups.forEach(g => g.colours.forEach(n => nameToGroup[n] = g.label));
@@ -815,17 +814,14 @@ function renderPickerGrid() {
   } else {
     // Cotton: grouped, same swatch style
     const groups = [
-      {label:'Whites & Creams',   start:'White #1',          end:'Ivory #156'},
-      {label:'Pinks',             start:'Baby Pink #2',       end:'Opera Mauve #160'},
-      {label:'Reds',              start:'Red #6',             end:'Red #138'},
-      {label:'Purples',           start:'Plum #7',            end:'Lavender #110'},
-      {label:'Blues',             start:'Navy #13',           end:'Steel Grey Blue #149'},
-      {label:'Greens',            start:'Deep Jade Green #4', end:'Forest Green #141'},
-      {label:'Yellows',           start:'Butter Yellow #3',   end:'Soft Yellow #139'},
-      {label:'Oranges',           start:'Orange #5',          end:'Burnt Rust #151'},
-      {label:'Browns',            start:'Brown #9',           end:'Golden Brown #157'},
-      {label:'Beiges',            start:'Stone #15',          end:'Beige #158'},
-      {label:'Greys & Black',     start:'Dark Grey #54',      end:'Espresso Grey #159'},
+      {label:'Whites, Creams & Neutrals', start:'White #1',             end:'Beige #158'},
+      {label:'Pinks & Reds',              start:'Baby Pink #2',          end:'Opera Mauve #160'},
+      {label:'Oranges & Yellows',         start:'Butter Yellow #3',      end:'Amber #150'},
+      {label:'Browns & Tans',             start:'Brown #9',              end:'Golden Brown #157'},
+      {label:'Greens',                    start:'Deep Jade Green #4',    end:'Forest Green #141'},
+      {label:'Blues & Teals',             start:'Navy #13',              end:'Steel Grey Blue #149'},
+      {label:'Purples & Lilacs',          start:'Plum #7',               end:'Lavender #110'},
+      {label:'Greys, Charcoals & Black',  start:'Dark Grey #54',         end:'Espresso Grey #159'},
     ];
     const nameToGroup = {};
     groups.forEach(g => {
