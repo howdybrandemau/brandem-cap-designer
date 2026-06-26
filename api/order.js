@@ -94,19 +94,31 @@ module.exports = async function handler(req, res) {
 
   if (boardId && mondayKey) {
     try {
-      // Column values — Monday uses JSON string for column_values
+      // Build notes text — includes phone since there's no dedicated phone column
+      const notesText = [
+        'Phone: ' + (phone || '—'),
+        'Qty: ' + qty + ' hats',
+        'Total: ' + total,
+        'Sizes: ' + (sizes || '—'),
+        '',
+        'Colours:',
+        (colours || '—'),
+        '',
+        'Text: ' + (text_elements || 'None'),
+        'Logos: ' + (logos || 'None'),
+        'Extras: ' + (extras || 'None'),
+        (notes ? 'Notes: ' + notes : '')
+      ].filter(l => l !== undefined).join('\n');
+
       const columnValues = JSON.stringify({
-        email:    { email: email, text: email },
-        phone:    { phone: phone || '', countryShortName: 'AU' },
-        numbers:  qty ? String(qty) : '',
-        text:     total || '',
-        long_text: { text: (colours || '') + '\n\nSizes: ' + (sizes || '—') + '\n\nText: ' + (text_elements || 'None') + '\nLogos: ' + (logos || 'None') + '\nExtras: ' + (extras || 'None') + (notes ? '\nNotes: ' + notes : '') }
+        lead_email:          { email: email, text: email },
+        long_text_mkzeggek:  { text: notesText }
       });
 
       const mondayQuery = `mutation {
         create_item (
           board_id: ` + boardId + `,
-          item_name: "` + name.replace(/"/g, '\\"') + ` — ` + qty + ` hats — ` + total + `",
+          item_name: "` + name.replace(/"/g, '\\"') + ` — ` + (phone || '') + ` — ` + qty + ` hats — ` + total + `",
           column_values: "` + columnValues.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + `"
         ) { id }
       }`;
@@ -128,7 +140,7 @@ module.exports = async function handler(req, res) {
         mondayOk = true;
         console.log('Monday item created, id:', mondayData.data.create_item.id);
       } else if (mondayData.errors) {
-        // Column mapping failed — retry with just the name (simpler, always works)
+        // Fallback — create item with name only
         console.warn('Monday column error, retrying with name only:', JSON.stringify(mondayData.errors));
         const simpleQuery = `mutation {
           create_item (
